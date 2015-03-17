@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <AssemblyName>MakerRanger</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MakerRanger</RootNamespace>
+    <ProjectTypeGuids>{b69e3092-b931-443c-abe7-7e7b65f2a37f};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{FF7DEA12-F4CC-4C84-B7C2-808132D50BAC}</ProjectGuid>
+    <TargetFrameworkVersion>v4.3</TargetFrameworkVersion>
+    <NetMfTargetsBaseDir Condition="'$(NetMfTargetsBaseDir)'==''">$(MSBuildExtensionsPath32)\Microsoft\.NET Micro Framework\</NetMfTargetsBaseDir>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
+  <ItemGroup>
+    <Compile Include="FanControl\FanController.cs" />
+    <Compile Include="LCDLib\BaseShifterLcdTransferProvider.cs" />
+    <Compile Include="LCDLib\DisposableObject.cs" />
+    <Compile Include="LCDLib\ILcdTransferProvider.cs" />
+    <Compile Include="LCDLib\Lcd.cs" />
+    <Compile Include="LCDLib\Shifter74Hc595LcdTransferProvider.cs" />
+    <Compile Include="LCDLib\ShifterPin.cs" />
+    <Compile Include="LEDMatrix\LEDMatrixReaderDisplayController.cs" />
+    <Compile Include="LEDMatrix\Max72197221.cs" />
+    <Compile Include="LEDMatrix\LEDMatrixEyesDisplayController.cs" />
+    <Compile Include="LEDStripLighting\LEDStrips.cs" />
+    <Compile Include="Person\Person.cs" />
+    <Compile Include="Sensors\BackStopMonitor.cs" />
+    <Compile Include="Printing\LabelPrinting.cs" />
+    <Compile Include="LCD\LCDScreen.cs" />
+    <Compile Include="Sensors\Multiplexer.cs" />
+    <Compile Include="Sensors\OpticalSensorArray.cs" />
+    <Compile Include="SD Storage\PersistedStorage.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Serial\SerialPortHelper.cs" />
+    <Compile Include="Settings\Settings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.SPOT.Hardware" />
+    <Reference Include="Microsoft.SPOT.Hardware.SerialPort" />
+    <Reference Include="Microsoft.SPOT.Native" />
+    <Reference Include="Microsoft.SPOT.Net" />
+    <Reference Include="SecretLabs.NETMF.Hardware, Version=4.3.1.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="SecretLabs.NETMF.Hardware.NetduinoPlus, Version=4.3.1.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="System" />
+    <Reference Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Label Templates\smlvader.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Label Templates\02.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MicroWebserver\Framework\NeonMika.Webserver\NeonMika.Webserver\NeonMika.Webserver.csproj">
+      <Project>{55E240F2-95F1-4ABE-9EEA-7137F908BD25}</Project>
+      <Name>NeonMika.Webserver</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
