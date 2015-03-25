@@ -37,6 +37,7 @@
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="FanControl\FanController.cs" />
+    <Compile Include="Game\StartGame.cs" />
     <Compile Include="LCDLib\BaseShifterLcdTransferProvider.cs" />
     <Compile Include="LCDLib\DisposableObject.cs" />
     <Compile Include="LCDLib\ILcdTransferProvider.cs" />
@@ -46,11 +47,15 @@
     <Compile Include="LEDMatrix\LEDMatrixReaderDisplayController.cs" />
     <Compile Include="LEDMatrix\Max72197221.cs" />
     <Compile Include="LEDMatrix\LEDMatrixEyesDisplayController.cs" />
-    <Compile Include="LEDStripLighting\LEDStrips.cs" />
     <Compile Include="Person\Person.cs" />
+    <Compile Include="RFID\RFIDEventArgs.cs" />
+    <Compile Include="RFID\RFIDIdentityDictionary.cs" />
+    <Compile Include="RFID\RfidReader.cs" />
+    <Compile Include="RFID\Utility.cs" />
     <Compile Include="Sensors\BackStopMonitor.cs" />
     <Compile Include="Printing\LabelPrinting.cs" />
     <Compile Include="LCD\LCDScreen.cs" />
+    <Compile Include="Sensors\Buttons.cs" />
     <Compile Include="Sensors\Multiplexer.cs" />
     <Compile Include="Sensors\OpticalSensorArray.cs" />
     <Compile Include="SD Storage\PersistedStorage.cs" />
@@ -76,9 +81,16 @@
     <None Include="Label Templates\02.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Mfrc522Lib\Mfrc522Lib.csproj">
+      <Project>{86DF1317-443B-4704-8F4E-A12DB23DC66F}</Project>
+      <Name>Mfrc522Lib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MicroWebserver\Framework\NeonMika.Webserver\NeonMika.Webserver\NeonMika.Webserver.csproj">
       <Project>{55E240F2-95F1-4ABE-9EEA-7137F908BD25}</Project>
       <Name>NeonMika.Webserver</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="LEDStripLighting\" />
   </ItemGroup>
 </Project>
