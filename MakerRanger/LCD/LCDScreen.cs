@@ -47,7 +47,9 @@ namespace MakerRanger
             HealthCheckOK,
             WrongAnimalTryAgain,
             TestComplete,
-            StartingGame
+            StartingGame,
+            SinglePlayerMode,
+            TwoPlayerMode
             }
 
 		private LCDStates _CurrentState = LCDStates.WelcomeMessages;
@@ -219,6 +221,14 @@ namespace MakerRanger
         {
             StartingGame();
         }
+        else if (this.CurrentState == LCDStates.SinglePlayerMode)
+        {
+            SinglePlayerMode();
+        }
+        else if (this.CurrentState == LCDStates.TwoPlayerMode)
+        {
+            TwoPlayerMode();
+        }
 		else
 		{
 			SnoozeDisplay(100);
@@ -229,6 +239,30 @@ namespace MakerRanger
             
 
 		}
+
+        private void TwoPlayerMode()
+        {
+            lcd.Visible = true;
+            lcd.Backlight = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(2, 0);
+            lcd.Write("Two Player");
+            lcd.SetCursorPosition(5, 1);
+            lcd.Write("Mode");
+            SnoozeDisplay(1000, true);
+        }
+
+        private void SinglePlayerMode()
+        {
+            lcd.Visible = true;
+            lcd.Backlight = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(2, 0);
+            lcd.Write("Single Player");
+            lcd.SetCursorPosition(5, 1);
+            lcd.Write("Mode");
+            SnoozeDisplay(1000, true);
+        }
 		private void DisplayKnownUser()
 		{
 		  if (this.PersonToDisplay!=null){
@@ -584,14 +618,34 @@ namespace MakerRanger
            
         private void ScanningHealth()
 		{
-			lcd.Backlight = true;
-			lcd.Visible = true;
-			lcd.Clear();
-			lcd.SetCursorPosition(1, 0);
-			lcd.Write("9+ invalid dig1");
-			lcd.SetCursorPosition(1, 1);
-			lcd.Write("please check");
-			SnoozeDisplay(1000, false);
+            lcd.Visible = true;
+            lcd.Backlight = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(1, 0);
+            lcd.Write("Health scanning...");
+            lcd.SetCursorPosition(0, 1);
+            //lcd.Write("################");
+            for (int i = 0; i < 15; i++)
+            {
+                System.Threading.Thread.Sleep(50);
+                lcd.SetCursorPosition(i, 1);
+                //lcd.Write("#");
+                lcd.Write(new byte[] { 0xFF }, 0, 1);
+
+            }
+            for (int i = 0; i < 15; i++)
+            {
+                System.Threading.Thread.Sleep(30);
+                lcd.SetCursorPosition(i, 1);
+                lcd.Write(" ");
+            }
+            SnoozeDisplay(1000, false);
+            lcd.Clear();
+            lcd.SetCursorPosition(1, 0);
+            lcd.Write("Healthy animal, ");
+            lcd.SetCursorPosition(1, 1);
+            lcd.Write("return to wild");
+            SnoozeDisplay(3000, false);
 		}
 
         private void PressToScan()

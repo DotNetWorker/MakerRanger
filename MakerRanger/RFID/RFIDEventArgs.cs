@@ -6,12 +6,15 @@ namespace MakerRanger.RFID
     public class RFIDEventArgs:EventArgs
     {
         public String TagIdentityText { get; set; }
-        public DateTime ReadTime{ get; set; }
+        public DateTime TagReadTime{ get; set; }
+        public short TagIndex { get; set; }
 
-        public RFIDEventArgs(String TagIdentityText, DateTime Date)
+        public RFIDEventArgs(String TagIdentityText,short TagIndex , DateTime Date)
         {
             this.TagIdentityText = TagIdentityText;
-            this.ReadTime = Date;
+            this.TagReadTime = Date;
+            this.TagIndex = TagIndex;
+            
         }
     }
 }

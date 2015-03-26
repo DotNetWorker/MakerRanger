@@ -18,7 +18,6 @@ namespace MakerRanger.RFID
                 using (var reader = new StreamReader(filestream))
                 {
                     String line;
-
                     while ((line = reader.ReadLine()) != null)
                     {
                         if (!(line == null) && !(line.Length == 0))

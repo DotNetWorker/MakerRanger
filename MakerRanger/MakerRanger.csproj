@@ -37,7 +37,8 @@
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="FanControl\FanController.cs" />
-    <Compile Include="Game\StartGame.cs" />
+    <Compile Include="Game\RoundList.cs" />
+    <Compile Include="Game\Game.cs" />
     <Compile Include="LCDLib\BaseShifterLcdTransferProvider.cs" />
     <Compile Include="LCDLib\DisposableObject.cs" />
     <Compile Include="LCDLib\ILcdTransferProvider.cs" />

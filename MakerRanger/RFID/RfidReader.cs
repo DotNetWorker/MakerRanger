@@ -82,11 +82,16 @@ namespace MakerRanger
                     //check to see if this tag is the same as last one
                     //
                     string TagIDHexValue = RFID.Utility.HexToString(mfrc.ReadUid().Bytes);
-                    string TagIDDetected = oRFIDIdentityDictionary.GetName(TagIDHexValue);
-                    Debug.Print("Tag: " + TagIDHexValue + "  " + TagIDDetected);
-                    if (!(TagIDDetected == null))
+                    string TagTextDetected = oRFIDIdentityDictionary.GetName(TagIDHexValue);
+                    Debug.Print("Tag: " + TagIDHexValue + "  " + TagTextDetected);
+                    if (!(TagTextDetected == null))
                     {
-                        TagDetected(this, new RFID.RFIDEventArgs(TagIDDetected, DateTime.Now));
+                        string[] TempSplitDescription= oRFIDIdentityDictionary.GetName(TagIDHexValue).Split('|');
+                        if (TempSplitDescription.Length==2) {
+                            TagDetected(this, new RFID.RFIDEventArgs(TempSplitDescription[1], short.Parse(TempSplitDescription[0]) ,DateTime.Now));
+                        }
+
+                        
                     }
                 }
                 else
