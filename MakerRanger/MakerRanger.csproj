@@ -45,6 +45,7 @@
     <Compile Include="LCDLib\Lcd.cs" />
     <Compile Include="LCDLib\Shifter74Hc595LcdTransferProvider.cs" />
     <Compile Include="LCDLib\ShifterPin.cs" />
+    <Compile Include="LCD\LCDMessage.cs" />
     <Compile Include="LEDMatrix\LEDMatrixReaderDisplayController.cs" />
     <Compile Include="LEDMatrix\Max72197221.cs" />
     <Compile Include="LEDMatrix\LEDMatrixEyesDisplayController.cs" />

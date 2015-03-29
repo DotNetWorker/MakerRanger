@@ -14,7 +14,7 @@ namespace MakerRanger
     {
         private Mfrc522 mfrc;
 
-        private RFID.RFIDIdentityDictionary oRFIDIdentityDictionary = new RFID.RFIDIdentityDictionary();
+        private RFID.RFIDIdentityDictionary oRFIDIdentityDictionary;
 
         private bool _enabled = false;
         public bool enabled
@@ -44,16 +44,16 @@ namespace MakerRanger
 
         private Thread MonitorThread;
 
-        public RfidReader(Cpu.Pin ss, SPI SPIInstance, Cpu.Pin ResetPin)
+        public RfidReader(RFID.RFIDIdentityDictionary RFIDIdentityDic, Cpu.Pin ss, SPI SPIInstance, Cpu.Pin ResetPin)
         {
-            oRFIDIdentityDictionary.LoadFromFile();
+            oRFIDIdentityDictionary = RFIDIdentityDic;
             this.enabled = false;
             mfrc = new Mfrc522(SPIInstance, ss, ResetPin);
         }
 
-        public RfidReader(Cpu.Pin ss, SPI SPIInstance)
+        public RfidReader(RFID.RFIDIdentityDictionary RFIDIdentityDic, Cpu.Pin ss, SPI SPIInstance)
         {
-            oRFIDIdentityDictionary.LoadFromFile();
+            oRFIDIdentityDictionary = RFIDIdentityDic;
             this.enabled = false;
             mfrc = new Mfrc522(SPIInstance, ss);
         }
@@ -86,12 +86,13 @@ namespace MakerRanger
                     Debug.Print("Tag: " + TagIDHexValue + "  " + TagTextDetected);
                     if (!(TagTextDetected == null))
                     {
-                        string[] TempSplitDescription= oRFIDIdentityDictionary.GetName(TagIDHexValue).Split('|');
-                        if (TempSplitDescription.Length==2) {
-                            TagDetected(this, new RFID.RFIDEventArgs(TempSplitDescription[1], short.Parse(TempSplitDescription[0]) ,DateTime.Now));
+                        string[] TempSplitDescription = oRFIDIdentityDictionary.GetName(TagIDHexValue).Split('|');
+                        if (TempSplitDescription.Length == 2)
+                        {
+                            TagDetected(this, new RFID.RFIDEventArgs(TempSplitDescription[1], short.Parse(TempSplitDescription[0]), DateTime.Now));
                         }
 
-                        
+
                     }
                 }
                 else

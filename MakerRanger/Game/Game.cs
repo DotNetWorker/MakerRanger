@@ -2,6 +2,7 @@ using System;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using System.Collections;
+using System.IO;
 
 namespace MakerRanger.Game
 {
@@ -18,18 +19,33 @@ namespace MakerRanger.Game
 
         //Events
         public event NativeEventHandler OnPlayersAreReady;
-        public event NativeEventHandler PlayerAisReady;
-        public event NativeEventHandler PlayerBisReady;
+        public event NativeEventHandler OnPlayerReady;
+
         public event NativeEventHandler OnScanAnimal;
+
+        public event NativeEventHandler OnEndOfRound;
+        public event NativeEventHandler OnEndOfGame;
+
+        public event NativeEventHandler OnNextAnimal;
+
+
 
         //Overall game is in progress - no config allowed
         public bool InProgress { get; set; }
         public bool IsSinglePlayermode { get; set; }
-        
+
         //Awaiting push button to scan animal
         public bool AwaitingScanA { get; set; }
         public bool AwaitingScanB { get; set; }
 
+
+        public enum PlayerType : byte
+        {
+            PlayerA,
+            PlayerB
+        }
+
+        private const string GameLogSDFolder = @"SD\Games\";
 
         private bool _PlayerAReady;
         public bool PlayerAReady
@@ -40,13 +56,13 @@ namespace MakerRanger.Game
                 if (this.Enabled)
                 {
                     _PlayerAReady = value;
-                    if ((value & PlayerBReady)|(this.IsSinglePlayermode)){ PlayersAreReady(); }
+                    if ((value & PlayerBReady) | (this.IsSinglePlayermode)) { PlayersAreReady(); }
                     else
                     {
-                        NativeEventHandler OnPlayersAisReady = PlayerAisReady;
-                        if (OnPlayersAisReady != null)
+                        NativeEventHandler PlayerReady = OnPlayerReady;
+                        if (PlayerReady != null)
                         {
-                            OnPlayersAisReady((uint)0, (uint)0, DateTime.Now);
+                            PlayerReady((uint)1, (uint)0, DateTime.Now);
                         }
                     }
                 }
@@ -60,16 +76,16 @@ namespace MakerRanger.Game
             get { return _PlayerBReady; }
             set
             {
-                if ((this.Enabled)& !(this.IsSinglePlayermode))
+                if ((this.Enabled) & !(this.IsSinglePlayermode))
                 {
                     _PlayerBReady = value;
                     if (value & PlayerAReady) { PlayersAreReady(); }
                     else
                     {
-                        NativeEventHandler OnPlayersBisReady = PlayerBisReady;
-                        if (OnPlayersBisReady != null)
+                        NativeEventHandler PlayerisReady = OnPlayerReady;
+                        if (PlayerisReady != null)
                         {
-                            OnPlayersBisReady((uint)0, (uint)0, DateTime.Now);
+                            PlayerisReady((uint)1, (uint)0, DateTime.Now);
                         }
                     }
                 }
@@ -95,6 +111,11 @@ namespace MakerRanger.Game
                     {
                         //raise event to say do scanning sequence for A
                         this.AwaitingScanA = false;
+                        NativeEventHandler ScanAnimal = OnScanAnimal;
+                        if (ScanAnimal != null)
+                        {
+                            ScanAnimal((uint)0, (uint)1, DateTime.Now);
+                        }
                     }
                 }
                 else { this.PlayerAReady = true; }  // Before game
@@ -112,14 +133,20 @@ namespace MakerRanger.Game
                     {
                         //raise event to say do scanning sequence for B
                         this.AwaitingScanB = false;
+                        NativeEventHandler ScanAnimal = OnScanAnimal;
+                        if (ScanAnimal != null)
+                        {
+                            ScanAnimal((uint)1, (uint)1, DateTime.Now);
+                        }
                     }
                 }
-                else {this.PlayerBReady = true; }  // Before game
+                else { this.PlayerBReady = true; }  // Before game
             }
 
         }
 
-        public void DetectedAEmpty(){
+        public void DetectedAEmpty()
+        {
             // if cage goes empty while wating for scan
             // set waiting for scan to false and let them go back through the detection, need to think about removing the prev time?- or make
             // scan be dated action
@@ -140,8 +167,8 @@ namespace MakerRanger.Game
         }
         private void PlayersAreReady()
         {
-            NativeEventHandler PlayersReady = OnPlayersAreReady;
             InitGame();
+            NativeEventHandler PlayersReady = OnPlayersAreReady;
             if (PlayersReady != null)
             {
                 PlayersReady((uint)0, (uint)0, DateTime.Now);
@@ -153,13 +180,122 @@ namespace MakerRanger.Game
             //Clear previous rounds and create new lists to catch
             RoundTimesA.Clear();
             RoundTimesB.Clear();
-            RoundListA.NewList(8,15);
+            RoundListA.NewList(2, 15);
             if (!(this.IsSinglePlayermode))
             {
-                RoundListB.NewList(8,15);
+                RoundListB.NewList(2, 15);
             }
             if (!(InProgress)) { this.InProgress = true; }
         }
+
+        public void NextInRound(PlayerType Player)
+        {
+            if (Player == PlayerType.PlayerA)
+            {
+                if (RoundListA.Count - 1 == RoundListA.Position)
+                {
+                    if ((RoundListB.Count - 1 == RoundListB.Position) | IsSinglePlayermode)
+                    {
+                        //end of game
+                        //end if the list so end of this player's game, raise event to say so
+                        NativeEventHandler PlayerEndOfGame = OnEndOfGame;
+                        if (PlayerEndOfGame != null)
+                        {
+                            //0 by convention means player B
+                            PlayerEndOfGame((uint)0, (uint)0, DateTime.Now);
+                        }
+                    }
+                    else
+                    {
+                        //end if the list so end of this player's game, raise event to say so
+                        NativeEventHandler PlayerEndOfRound = OnEndOfRound;
+                        if (PlayerEndOfRound != null)
+                        {
+                            //0 by convention means player A
+                            PlayerEndOfRound((uint)0, (uint)0, DateTime.Now);
+                        }
+                    }
+                }
+                else
+                {
+                    RoundListA.Next();
+                    NativeEventHandler NextAnimal = OnNextAnimal;
+                    if (NextAnimal != null)
+                    {
+                        NextAnimal((uint)0, (uint)0, DateTime.Now);
+                    }
+                }
+            }
+            else
+            {
+                if (RoundListB.Count - 1 == RoundListB.Position)
+                {
+                    if (RoundListA.Count - 1 == RoundListA.Position)
+                    {
+                        //end of game
+                        //end if the list so end of this player's game, raise event to say so
+                        NativeEventHandler PlayerEndOfGame = OnEndOfGame;
+                        if (PlayerEndOfGame != null)
+                        {
+                            //1 by convention means player B
+                            PlayerEndOfGame((uint)1, (uint)0, DateTime.Now);
+                        }
+                    }
+                    else
+                    {
+                        //end if the list so end of this player's game, raise event to say so
+                        NativeEventHandler PlayerEndOfRound = OnEndOfRound;
+                        if (PlayerEndOfRound != null)
+                        {
+                            // 1 by convention means player B
+                            PlayerEndOfRound((uint)1, (uint)0, DateTime.Now);
+                        }
+                    }
+                }
+                else
+                {
+                    RoundListB.Next();
+                    NativeEventHandler NextAnimal = OnNextAnimal;
+                    if (NextAnimal != null)
+                    {
+                        NextAnimal((uint)1, (uint)0, DateTime.Now);
+                    }
+                }
+            }
+
+        }
+
+        public void SaveRoundsToFile()
+        {
+            //Use the this.ID as filename
+            SaveRoundToFile(this.RoundListA);
+            if (!(this.IsSinglePlayermode))
+            {
+              SaveRoundToFile(this.RoundListB);
+            }
+        }
+
+        private void SaveRoundToFile(RoundList ThisRoundList)
+        {
+            if (!(Directory.Exists(GameLogSDFolder)))
+            {
+                Directory.CreateDirectory(GameLogSDFolder);
+            }
+            //Write the log of each player round to file
+            using (var filestream = new FileStream(GameLogSDFolder + ThisRoundList.ID.ToString(), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write, 8))
+			{
+				using (var streamWriter = new StreamWriter(filestream))
+				{
+                    for (int i = 0; i < ThisRoundList.Count-1; i++)
+                    {
+                        streamWriter.WriteLine(ThisRoundList[i].ToString());
+                    }
+					streamWriter.Close();
+				}
+			}
+
+        }
+
 
         //Raise event to start scanning sequence
         private void OnScanAnimalA()
@@ -172,12 +308,12 @@ namespace MakerRanger.Game
             }
 
         }
-        
+
         //Raise event to start scanning sequence
         private void OnScanAnimalB()
         {
             NativeEventHandler ScanAnimal = OnScanAnimal;
-            if (ScanAnimal != null) 
+            if (ScanAnimal != null)
             {
                 //By convention well pass 0 for A and 1 for B
                 ScanAnimal(1, 0, DateTime.Now);

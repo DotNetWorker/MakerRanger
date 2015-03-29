@@ -22,9 +22,9 @@ namespace MakerRanger.RFID
                     {
                         if (!(line == null) && !(line.Length == 0))
                         {
-                            //Line tab delimited Hex tag name tab then Human Readable Name preceeded by two digit order id
-                            //9F93A9    01Pig
-                            //22E03D    02Hamster
+                            //Line tab delimited Hex tag name tab then Human Readable Name preceded by two digit order id
+                            //9F93A9    1|Pig
+                            //22E03D    2|Hamster
                             String[] columnArray = line.Split('\t');
                             if (columnArray.Length == 2) { this.Add(columnArray[0], columnArray[1]); };
                             if (reader.EndOfStream) break;
@@ -56,5 +56,20 @@ namespace MakerRanger.RFID
             }
             return null;
         }
+
+        public string GetName(byte index)
+        {
+            foreach (DictionaryEntry item in this)
+            {
+                string[] tmp = item.Value.ToString().Split('|');
+                if (byte.Parse(tmp[0]) == index)
+                {
+                    return tmp[1];
+                }
+            }
+            return null;
+        }
+
+       
     }
 }

@@ -57,6 +57,11 @@ namespace MakerRanger
         private static RfidReader rfidReadera;
         private static RfidReader rfidReaderb;
 
+
+        private static RFID.RFIDIdentityDictionary oRFIDIdentityDic;
+ 
+
+
         public static void Main()
         {
             Debug.EnableGCMessages(true);
@@ -89,6 +94,11 @@ namespace MakerRanger
             LCDThreadA.Start();
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.Startup);
 
+            //Dic holds all the tags and the descriptions
+            oRFIDIdentityDic= new RFID.RFIDIdentityDictionary();
+            oRFIDIdentityDic.LoadFromFile();
+
+
             oButtons.OnButtonADown += ButtonADown;
             oButtons.OnButtonBDown += ButtonBDown;
 
@@ -98,17 +108,20 @@ namespace MakerRanger
             oLabelPrinting.ResetPrinter();
             //2 Seconds after reset before printer available
 
-            GameController.PlayerAisReady += PlayerAisReady;
-            GameController.PlayerBisReady += PlayerBisReady;
+            GameController.OnPlayerReady += PlayerisReady;
             GameController.OnPlayersAreReady += PlayersAreReady;
+            GameController.OnScanAnimal += ScanAnimal;
+            GameController.OnNextAnimal += NextAnimal;
+            GameController.OnEndOfRound += EndOfRound;
+            GameController.OnEndOfGame += EndOfGame;
             GameController.Enabled = true;
 
 
             // Add event handler for sticker take message
             oLabelPrinting.StickerPrinted += new NativeEventHandler(StickerPrintedEvent);
 
-            rfidReadera = new RfidReader(Pins.GPIO_PIN_D9, SPIInstance, Pins.GPIO_PIN_A0);
-            rfidReaderb = new RfidReader(Pins.GPIO_PIN_D8, SPIInstance);
+            rfidReadera = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D9, SPIInstance, Pins.GPIO_PIN_A0);
+            rfidReaderb = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D8, SPIInstance);
             rfidReadera.ResetReaders();
             rfidReadera.InitReader();
             rfidReaderb.InitReader();
@@ -175,33 +188,123 @@ namespace MakerRanger
             Thread.Sleep(Timeout.Infinite);
         }
 
+       
 
-        private static void PlayerAisReady(uint uint1, uint unit2, DateTime date)
+        private static void NextAnimal(uint data1, uint data2, DateTime time)
         {
-            oLCDScreenA.AddMessage(LCDScreen.LCDStates.GetReady);
+            //By convention 0=A 1=B
+            if (data1 == 0)
+            {
+                DisplaySeekingA();
+            }
+            else
+            {
+                DisplaySeekingB();
+            }
+        }
+
+        private static void ScanAnimal(uint data1, uint data2, DateTime time)
+        {
+            //by convention 0=A and 1=B
+            if (data1 == 0)
+            {
+                oLCDScreenA.AddMessage(LCDScreen.LCDStates.ScanningHealth);
+                GameController.NextInRound(Game.Game.PlayerType.PlayerA);
+
+            }
+            else
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.ScanningHealth);
+                GameController.NextInRound(Game.Game.PlayerType.PlayerB);
+            }
         }
 
 
-        private static void PlayerBisReady(uint uint1, uint unit2, DateTime date)
+        private static void PlayerisReady(uint uint1, uint unit2, DateTime date)
         {
-            oLCDScreenB.AddMessage(LCDScreen.LCDStates.GetReady);
+            if (uint1 == 0)
+            {
+                oLCDScreenA.AddMessage(LCDScreen.LCDStates.GetReady);
+            }
+            else
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.GetReady);
+            }
         }
-
+      
+        //Both players ready, start the game
         private static void PlayersAreReady(uint uint1, uint unit2, DateTime date)
         {
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.StartingGame);
+
             if (!(GameController.IsSinglePlayermode))
             {
                 oLCDScreenB.AddMessage(LCDScreen.LCDStates.StartingGame);
             }
+            DisplaySeekingA();
+            DisplaySeekingB();
 
         }
 
+       
+
+        private static void DisplaySeekingA()
+        {
+            string Description = oRFIDIdentityDic.GetName(GameController.RoundListA.CurentItemID());
+            oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
+            
+        }
+
+        private static void DisplaySeekingB()
+        {
+            if (!(GameController.IsSinglePlayermode))
+            {
+                string Description = oRFIDIdentityDic.GetName(GameController.RoundListB.CurentItemID());
+                oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
+            }
+        }
+
+
+        private static void EndOfGame(uint data1, uint data2, DateTime time)
+        {
+            if (data1 == 0)
+            {
+                oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
+
+            }
+            else
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.TestComplete);
+            }
+
+            //Reset game, save game data
+            GameController.SaveRoundsToFile();
+            GameController.InProgress = false;
+            GameController.InProgress = false;
+            oLCDScreenA.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
+            oLCDScreenB.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
+            //leave data in case we want a sticker reprint
+        }
+
+        private static void EndOfRound(uint data1, uint data2, DateTime time)
+        {
+            if (data1 == 0)
+            {
+                oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
+
+            }
+            else
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.TestComplete);
+            }
+        }
+
+        
         private static void FileToProcess(string filename, string username, string screenname, Int64 userid, short Guess)
         {
             //oLEDStrips.CaseLights(true);
             PersonScanned = new Person.Person() { UserName = username, UserID = userid, ScreenName = screenname, Guess = Guess };
-            oLCDScreenA.AddMessage(LCDScreen.LCDStates.PersonDetected, PersonScanned);
+            //oLCDScreenA.AddMessage(LCDScreen.LCDStates.PersonDetected, PersonScanned);
         }
 
 
@@ -209,16 +312,16 @@ namespace MakerRanger
         {
             if (GameController.Enabled)
             {
-               GameController.PlayerAReady = true;
+                GameController.ButtonAPressed();
             }
-
+           
         }
 
         private static void ButtonBDown(uint uint1, uint uint2, DateTime date)
         {
             if (GameController.Enabled)
             {
-                GameController.PlayerBReady = true;
+                GameController.ButtonBPressed();
             }
 
         }
@@ -228,7 +331,7 @@ namespace MakerRanger
             //Reset the settings from the webserver request
             oSettings.SetValue("standard", @"maxGuessValue", MaxGuessValue);
             oSettings.SetValue("standard", @"qtyMaxNumber", MaxQtyValue);
-            oLCDScreenA.MaxChooseValue = oSettings.GetValue("standard", @"maxGuessValue");
+            //oLCDScreenA.MaxChooseValue = oSettings.GetValue("standard", @"maxGuessValue");
             oPersistedStorage.MaxGuessValue = int.Parse(MaxGuessValue);
             oPersistedStorage.qtyMaxNumber = byte.Parse(MaxQtyValue);
             oSettings.Save("iniSettings");
@@ -243,18 +346,7 @@ namespace MakerRanger
         }
 
 
-        private static bool isSecretNumber(byte guess)
-        {
-            foreach (byte item in oPersistedStorage.SecretNumber)
-            {
-                if (item == guess)
-                { return true; }
-            }
-            return false;
-        }
-
-
-
+      
         // turns number in to string 1= 01 used by displays
         private static string ConvertByteToString(byte Number)
         {
@@ -269,24 +361,26 @@ namespace MakerRanger
 
         private static void TagDetecteda(object sender, RFID.RFIDEventArgs e)
         {
-            Debug.Print("Tag Detected a " + System.DateTime.Now.ToString());
-            if (GameController.InProgress)
+           Debug.Print("Tag Detected a " + System.DateTime.Now.ToString());
+           if (GameController.InProgress)
             {
                 if (GameController.RoundListA.isCurrentItem((int)e.TagIndex))
                 {
                     //Correct tag in place
                     //Log time and ask to scan
-                    oLCDScreenA.AddMessage(LCDScreen.LCDStates.YourGuessWas);
+                    oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan,e.TagIdentityText));
                     GameController.RoundTimesA.Enqueue(e.TagReadTime);
                     GameController.AwaitingScanA = true;
                 }
                 else
                 {
-                   //Wrong tag in place
-                    oLCDScreenA.AddMessage(LCDScreen.LCDStates.WrongAnimalTryAgain);
+                    
+                    //Wrong tag in place
+                    oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.WrongAnimalTryAgain, e.TagIdentityText));
+                    DisplaySeekingA();
                 }
             }
-           //Feed to the admin processor
+            //Feed to the admin processor
             if (e.TagIndex > (short)99) { ExecuteAdminCommand(e.TagIndex); }
 
             // if oRoundListA.isCurrentItem(e.)
@@ -301,14 +395,15 @@ namespace MakerRanger
                 {
                     //Correct tag in place
                     //Log time and ask to scan
-                    oLCDScreenA.AddMessage(LCDScreen.LCDStates.YourGuessWas);
-                    GameController.RoundTimesA.Enqueue(e.TagReadTime);
-                    GameController.AwaitingScanB=true;
+                    oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan,e.TagIdentityText));
+                    GameController.RoundTimesB.Enqueue(e.TagReadTime);
+                    GameController.AwaitingScanB = true;
                 }
                 else
                 {
                     //Wrong tag in place
-                    oLCDScreenA.AddMessage(LCDScreen.LCDStates.WrongAnimalTryAgain);
+                    oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.WrongAnimalTryAgain, e.TagIdentityText));
+                    DisplaySeekingB();
                 }
 
             }
