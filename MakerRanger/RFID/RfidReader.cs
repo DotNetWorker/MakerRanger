@@ -39,7 +39,7 @@ namespace MakerRanger
 
 
         public delegate void RFIDEventHandler(object sender, MakerRanger.RFID.RFIDEventArgs e);
-        public event RFIDEventHandler TagDetected;
+        public event RFIDEventHandler TagChangeDetected;
         public event NativeEventHandler TagLost;
 
         private Thread MonitorThread;
@@ -70,37 +70,60 @@ namespace MakerRanger
             mfrc.Init();
         }
 
+        //ToDO change this into a rfid changed event on the id changing
         private void ScanForTags()
         {
-            Uid PreviousUid = null;
+            bool TagPreviouslyPresent = false;
+            string PreviousUid = string.Empty;
+
+           
             bool keeplooping = true;
             while (keeplooping)
             {
-                if (mfrc.IsTagPresent())
+                if (mfrc.IsTagPresent() )
                 {
-
+                    //Debug.Print("Tag Present");
+                    TagPreviouslyPresent = true;
                     //check to see if this tag is the same as last one
                     //
+
                     string TagIDHexValue = RFID.Utility.HexToString(mfrc.ReadUid().Bytes);
-                    string TagTextDetected = oRFIDIdentityDictionary.GetName(TagIDHexValue);
-                    Debug.Print("Tag: " + TagIDHexValue + "  " + TagTextDetected);
-                    if (!(TagTextDetected == null))
+
+                    //Block any bounce reads only interested in tag changing
+                    if (TagIDHexValue != PreviousUid)
                     {
-                        string[] TempSplitDescription = oRFIDIdentityDictionary.GetName(TagIDHexValue).Split('|');
-                        if (TempSplitDescription.Length == 2)
+                        //Block any mis reads
+                        if (TagIDHexValue != "00000000")
                         {
-                            TagDetected(this, new RFID.RFIDEventArgs(TempSplitDescription[1], short.Parse(TempSplitDescription[0]), DateTime.Now));
+                            string TagTextDetected = oRFIDIdentityDictionary.GetName(TagIDHexValue);
+                            Debug.Print("Tag: " + TagIDHexValue + "  " + TagTextDetected);
+                            if (!(TagTextDetected == null))
+                            {
+                                PreviousUid = TagIDHexValue;
+                                string[] TempSplitDescription = oRFIDIdentityDictionary.GetName(TagIDHexValue).Split('|');
+                                if (TempSplitDescription.Length == 2)
+                                {
+                                    TagChangeDetected(this, new RFID.RFIDEventArgs(TempSplitDescription[1], short.Parse(TempSplitDescription[0]), DateTime.Now));
+                                }
+
+
+                            }
                         }
-
-
                     }
+
+
                 }
                 else
                 {
-                    if (!(PreviousUid == null))
+                    if (TagPreviouslyPresent)
                     {
-                        TagLost((uint)0, (uint)0, DateTime.Now);
-                        PreviousUid = null;
+                        Debug.Print("Tag Lost");
+                        if (!(TagLost == null))
+                        {
+                            TagLost((uint)0, (uint)0, DateTime.Now);
+                        }
+                        TagPreviouslyPresent = false;
+                        PreviousUid = string.Empty;
                     }
                 }
                 mfrc.HaltTag(); //can't remember what this is doing, need to check docs

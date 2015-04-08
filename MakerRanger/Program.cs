@@ -16,6 +16,7 @@ namespace MakerRanger
 {
     public class Program
     {
+        static Boolean isMotorsConnected = true;
         //static BackStopMonitor oBackStopMonitor;
         static PersistedStorage oPersistedStorage;
         //static MakerRanger.LEDStripLighting.LEDStrips oLEDStrips = new LEDStripLighting.LEDStrips();
@@ -33,7 +34,7 @@ namespace MakerRanger
                 SPI.SPI_module.SPI1));
         static Settings.Settings oSettings;
         static LCDScreen oLCDScreenA = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D7);
-        static LCDScreen oLCDScreenB = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D10);
+        static LCDScreen oLCDScreenB = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D6);
 
         static Thread LCDThreadA;
         static Thread LCDThreadB;
@@ -57,9 +58,11 @@ namespace MakerRanger
         private static RfidReader rfidReadera;
         private static RfidReader rfidReaderb;
 
+        
 
         private static RFID.RFIDIdentityDictionary oRFIDIdentityDic;
- 
+
+        private static Steppers.StepperController oStepperMotorController = new Steppers.StepperController(0x04);
 
 
         public static void Main()
@@ -69,9 +72,9 @@ namespace MakerRanger
 
             // Tie analogue ports high that are not used
 
-            OutputPort dummy1 = new OutputPort(Pins.GPIO_PIN_A1, true);
+            // OutputPort dummy1 = new OutputPort(Pins.GPIO_PIN_A1, true);
             //OutputPort dummy3 = new OutputPort(Pins.GPIO_PIN_A3, true);
-            OutputPort dummy4 = new OutputPort(Pins.GPIO_PIN_A4, true);
+            // OutputPort dummy4 = new OutputPort(Pins.GPIO_PIN_A4, true);
 
             //for (int i = 0; i < 10; i++)
             //{
@@ -94,8 +97,9 @@ namespace MakerRanger
             LCDThreadA.Start();
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.Startup);
 
+
             //Dic holds all the tags and the descriptions
-            oRFIDIdentityDic= new RFID.RFIDIdentityDictionary();
+            oRFIDIdentityDic = new RFID.RFIDIdentityDictionary();
             oRFIDIdentityDic.LoadFromFile();
 
 
@@ -123,18 +127,35 @@ namespace MakerRanger
             rfidReadera = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D9, SPIInstance, Pins.GPIO_PIN_A0);
             rfidReaderb = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D8, SPIInstance);
             rfidReadera.ResetReaders();
+            Thread.Sleep(300);
             rfidReadera.InitReader();
             rfidReaderb.InitReader();
 
 
-            rfidReadera.TagDetected += new RfidReader.RFIDEventHandler(TagDetecteda);
-            rfidReaderb.TagDetected += new RfidReader.RFIDEventHandler(TagDetectedb);
+            rfidReadera.TagChangeDetected += new RfidReader.RFIDEventHandler(TagChangeDetecteda);
+            rfidReaderb.TagChangeDetected += new RfidReader.RFIDEventHandler(TagChangeDetectedb);
 
 
             rfidReadera.enabled = true;
             rfidReaderb.enabled = true;
 
+            //On startup move the pointer to neutral position
+            //Thread.Sleep(5000);
+            if (isMotorsConnected)
+            {
+                while (true)
+                {
+                    for (short i = 0; i < 20; i++)
+                    {
+                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, i);
+                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, i);
+                        Thread.Sleep(2000);
+                    }
 
+                }
+
+
+            }
 
             //Set webserver up listening
             //Server oWebServer = new Server(80, false, "192.168.1.118", "255.255.255.0", "192.168.1.254", "NETDUINOPLUS");
@@ -188,7 +209,7 @@ namespace MakerRanger
             Thread.Sleep(Timeout.Infinite);
         }
 
-       
+
 
         private static void NextAnimal(uint data1, uint data2, DateTime time)
         {
@@ -231,7 +252,7 @@ namespace MakerRanger
                 oLCDScreenB.AddMessage(LCDScreen.LCDStates.GetReady);
             }
         }
-      
+
         //Both players ready, start the game
         private static void PlayersAreReady(uint uint1, uint unit2, DateTime date)
         {
@@ -246,13 +267,18 @@ namespace MakerRanger
 
         }
 
-       
+
 
         private static void DisplaySeekingA()
         {
             string Description = oRFIDIdentityDic.GetName(GameController.RoundListA.CurentItemID());
             oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
-            
+            if (isMotorsConnected)
+            {
+                oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, (short)GameController.RoundListA.CurentItemID());
+
+            }
+
         }
 
         private static void DisplaySeekingB()
@@ -261,12 +287,22 @@ namespace MakerRanger
             {
                 string Description = oRFIDIdentityDic.GetName(GameController.RoundListB.CurentItemID());
                 oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
+                if (isMotorsConnected)
+                {
+                    if (isMotorsConnected)
+                    {
+                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, (short)GameController.RoundListB.CurentItemID());
+                    }
+
+                }
+
             }
         }
 
 
         private static void EndOfGame(uint data1, uint data2, DateTime time)
         {
+            //End of game by nature should show on both screens
             if (data1 == 0)
             {
                 oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
@@ -277,12 +313,23 @@ namespace MakerRanger
                 oLCDScreenB.AddMessage(LCDScreen.LCDStates.TestComplete);
             }
 
+            //move back to rest postion
+            if (isMotorsConnected)
+            {
+                oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, (short)20);
+                oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, (short)20);
+            }
+
+            // Tell them to take stickers
+            oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
+
             //Reset game, save game data
             GameController.SaveRoundsToFile();
-            GameController.InProgress = false;
-            GameController.InProgress = false;
-            oLCDScreenA.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
-            oLCDScreenB.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
+            GameController.InProgressA = false;
+            GameController.InProgressB = false;
+            //oLCDScreenA.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
+            //oLCDScreenB.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
             //leave data in case we want a sticker reprint
         }
 
@@ -299,7 +346,7 @@ namespace MakerRanger
             }
         }
 
-        
+
         private static void FileToProcess(string filename, string username, string screenname, Int64 userid, short Guess)
         {
             //oLEDStrips.CaseLights(true);
@@ -314,7 +361,7 @@ namespace MakerRanger
             {
                 GameController.ButtonAPressed();
             }
-           
+
         }
 
         private static void ButtonBDown(uint uint1, uint uint2, DateTime date)
@@ -343,10 +390,11 @@ namespace MakerRanger
         {
             //Tell user to take sticker
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
         }
 
 
-      
+
         // turns number in to string 1= 01 used by displays
         private static string ConvertByteToString(byte Number)
         {
@@ -359,22 +407,23 @@ namespace MakerRanger
             return NumberAsString;
         }
 
-        private static void TagDetecteda(object sender, RFID.RFIDEventArgs e)
+        private static void TagChangeDetecteda(object sender, RFID.RFIDEventArgs e)
         {
-           Debug.Print("Tag Detected a " + System.DateTime.Now.ToString());
-           if (GameController.InProgress)
+            Debug.Print("Tag Detected a " + System.DateTime.Now.ToString());
+            if (GameController.InProgressA)
             {
                 if (GameController.RoundListA.isCurrentItem((int)e.TagIndex))
                 {
                     //Correct tag in place
                     //Log time and ask to scan
-                    oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan,e.TagIdentityText));
+
+                    oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan, e.TagIdentityText));
                     GameController.RoundTimesA.Enqueue(e.TagReadTime);
                     GameController.AwaitingScanA = true;
+
                 }
                 else
                 {
-                    
                     //Wrong tag in place
                     oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.WrongAnimalTryAgain, e.TagIdentityText));
                     DisplaySeekingA();
@@ -386,16 +435,17 @@ namespace MakerRanger
             // if oRoundListA.isCurrentItem(e.)
         }
 
-        private static void TagDetectedb(object sender, RFID.RFIDEventArgs e)
+        private static void TagChangeDetectedb(object sender, RFID.RFIDEventArgs e)
         {
             Debug.Print("Tag Detected b " + System.DateTime.Now.ToString());
-            if ((GameController.InProgress) & !(GameController.IsSinglePlayermode))
+            if ((GameController.InProgressB) & !(GameController.IsSinglePlayermode))
             {
                 if (GameController.RoundListB.isCurrentItem((int)e.TagIndex))
                 {
                     //Correct tag in place
                     //Log time and ask to scan
-                    oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan,e.TagIdentityText));
+
+                    oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan, e.TagIdentityText));
                     GameController.RoundTimesB.Enqueue(e.TagReadTime);
                     GameController.AwaitingScanB = true;
                 }
@@ -431,7 +481,7 @@ namespace MakerRanger
                     Debug.Print("Admin command " + CommandID.ToString());
                     Debug.Print("Single Player Toggle");
                     //If the game is not yet in progress allow switch player modes                    
-                    if (!(GameController.InProgress))
+                    if (!(GameController.InProgressA) && !(GameController.InProgressB))
                     {
                         GameController.IsSinglePlayermode = !GameController.IsSinglePlayermode;
                         if (GameController.IsSinglePlayermode)

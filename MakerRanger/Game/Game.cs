@@ -31,7 +31,8 @@ namespace MakerRanger.Game
 
 
         //Overall game is in progress - no config allowed
-        public bool InProgress { get; set; }
+        public bool InProgressA { get; set; }
+        public bool InProgressB { get; set; }
         public bool IsSinglePlayermode { get; set; }
 
         //Awaiting push button to scan animal
@@ -56,7 +57,10 @@ namespace MakerRanger.Game
                 if (this.Enabled)
                 {
                     _PlayerAReady = value;
-                    if ((value & PlayerBReady) | (this.IsSinglePlayermode)) { PlayersAreReady(); }
+                    if ((value & PlayerBReady) | (this.IsSinglePlayermode)) 
+                    {
+                        PlayersAreReady(); 
+                    }
                     else
                     {
                         NativeEventHandler PlayerReady = OnPlayerReady;
@@ -79,7 +83,10 @@ namespace MakerRanger.Game
                 if ((this.Enabled) & !(this.IsSinglePlayermode))
                 {
                     _PlayerBReady = value;
-                    if (value & PlayerAReady) { PlayersAreReady(); }
+                    if (value & PlayerAReady) 
+                    { 
+                        PlayersAreReady(); 
+                    }
                     else
                     {
                         NativeEventHandler PlayerisReady = OnPlayerReady;
@@ -97,6 +104,7 @@ namespace MakerRanger.Game
 
         public Game()
         {
+            this.IsSinglePlayermode = false;
             // class initializer
 
         }
@@ -105,7 +113,7 @@ namespace MakerRanger.Game
         {
             if (this.Enabled)
             {
-                if (this.InProgress)
+                if (this.InProgressA)
                 {
                     if (this.AwaitingScanA)
                     {
@@ -118,7 +126,10 @@ namespace MakerRanger.Game
                         }
                     }
                 }
-                else { this.PlayerAReady = true; }  // Before game
+                else if (!(this.InProgressA) && !(this.InProgressB))
+                {
+                    if (!(this.PlayerAReady)) { this.PlayerAReady = true; } 
+                }  // Before game
             }
 
         }
@@ -127,7 +138,7 @@ namespace MakerRanger.Game
         {
             if (this.Enabled)
             {
-                if (this.InProgress)
+                if (this.InProgressB)
                 {
                     if (this.AwaitingScanB)
                     {
@@ -140,7 +151,10 @@ namespace MakerRanger.Game
                         }
                     }
                 }
-                else { this.PlayerBReady = true; }  // Before game
+                else if (!(this.InProgressA) && !(this.InProgressB))
+                {
+                    if (!(this.PlayerBReady)) { this.PlayerBReady = true; }
+                }  // Before game
             }
 
         }
@@ -165,6 +179,7 @@ namespace MakerRanger.Game
             this.PlayerAReady = false;
             this.PlayerBReady = false;
         }
+
         private void PlayersAreReady()
         {
             InitGame();
@@ -185,16 +200,19 @@ namespace MakerRanger.Game
             {
                 RoundListB.NewList(2, 15);
             }
-            if (!(InProgress)) { this.InProgress = true; }
+            if (!(InProgressA)) { this.InProgressA = true; }
+            if (!(InProgressB)) { this.InProgressB = true; }
+            ResetPlayersReady();
         }
 
         public void NextInRound(PlayerType Player)
         {
             if (Player == PlayerType.PlayerA)
             {
+                //Last Position already
                 if (RoundListA.Count - 1 == RoundListA.Position)
                 {
-                    if ((RoundListB.Count - 1 == RoundListB.Position) | IsSinglePlayermode)
+                    if (!(InProgressB) | IsSinglePlayermode)
                     {
                         //end of game
                         //end if the list so end of this player's game, raise event to say so
@@ -204,6 +222,8 @@ namespace MakerRanger.Game
                             //0 by convention means player B
                             PlayerEndOfGame((uint)0, (uint)0, DateTime.Now);
                         }
+                        this.InProgressA = false;
+                       
                     }
                     else
                     {
@@ -214,6 +234,7 @@ namespace MakerRanger.Game
                             //0 by convention means player A
                             PlayerEndOfRound((uint)0, (uint)0, DateTime.Now);
                         }
+                        this.InProgressA = false;
                     }
                 }
                 else
@@ -222,7 +243,7 @@ namespace MakerRanger.Game
                     NativeEventHandler NextAnimal = OnNextAnimal;
                     if (NextAnimal != null)
                     {
-                        NextAnimal((uint)0, (uint)0, DateTime.Now);
+                        NextAnimal((uint)0, (uint)RoundListA.CurentItemID(), DateTime.Now);
                     }
                 }
             }
@@ -230,7 +251,7 @@ namespace MakerRanger.Game
             {
                 if (RoundListB.Count - 1 == RoundListB.Position)
                 {
-                    if (RoundListA.Count - 1 == RoundListA.Position)
+                    if (!(InProgressA))
                     {
                         //end of game
                         //end if the list so end of this player's game, raise event to say so
@@ -240,6 +261,7 @@ namespace MakerRanger.Game
                             //1 by convention means player B
                             PlayerEndOfGame((uint)1, (uint)0, DateTime.Now);
                         }
+                        this.InProgressB = false;
                     }
                     else
                     {
@@ -250,6 +272,7 @@ namespace MakerRanger.Game
                             // 1 by convention means player B
                             PlayerEndOfRound((uint)1, (uint)0, DateTime.Now);
                         }
+                        this.InProgressB = false;
                     }
                 }
                 else
@@ -258,7 +281,8 @@ namespace MakerRanger.Game
                     NativeEventHandler NextAnimal = OnNextAnimal;
                     if (NextAnimal != null)
                     {
-                        NextAnimal((uint)1, (uint)0, DateTime.Now);
+
+                        NextAnimal((uint)1, (uint)RoundListB.CurentItemID(), DateTime.Now);
                     }
                 }
             }

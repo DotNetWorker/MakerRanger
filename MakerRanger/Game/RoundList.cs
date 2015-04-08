@@ -33,14 +33,14 @@ namespace MakerRanger.Game
             
             
             // Trim down to desired size from the full array
-            for (int i = this.Count - 1;  i > NumberOfItems; i--)
+            for (int i = this.Count - 1;  i > NumberOfItems-1; i--)
             {
                 this.RemoveAt(i);
             }
 
             Debug.Print("-- Items to find list --");
             //Let us see what we have generated
-            for (int i = 0; i < this.Count-1; i++)
+            for (int i = 0; i <= this.Count-1; i++)
             {
                 Debug.Print("Round: " + this[i].ToString());
             }

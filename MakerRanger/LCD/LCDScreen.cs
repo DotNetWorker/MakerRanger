@@ -188,15 +188,22 @@ namespace MakerRanger
             lcd.Backlight = true;
             lcd.Clear();
             lcd.SetCursorPosition(0, 0);
-            lcd.Write("Game Started");
-            lcd.SetCursorPosition(0, 1);
-            lcd.Write("watch Jake Snake ");
+            lcd.Write("Starting test");
             SnoozeDisplay(2000, false);
-            lcd.Write("              ");
-            SnoozeDisplay(700, false);
-            lcd.SetCursorPosition(0, 1);
-            lcd.Write("catch the animal");
-            SnoozeDisplay(5000, false);
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write("             ");
+            lcd.SetCursorPosition(6, 0);
+            lcd.Write("three");
+            SnoozeDisplay(1200, false);
+            lcd.SetCursorPosition(6, 0);
+            lcd.Write("two  ");
+            SnoozeDisplay(1200, false);
+            lcd.SetCursorPosition(6, 0);
+            lcd.Write("one  ");
+            SnoozeDisplay(1200, false);
+            lcd.SetCursorPosition(6, 0);
+            lcd.Write("GO   ");
+            SnoozeDisplay(1000, false);
         }
 
 
@@ -227,7 +234,7 @@ namespace MakerRanger
             lcd.Write(new byte[] { 0xFF }, 0, 1);
 
             FlashDisplayBackLight(10, 600, 50);
-            SnoozeDisplay(1000, false);
+            SnoozeDisplay(15, false);
         }
 
 
@@ -354,8 +361,18 @@ namespace MakerRanger
             lcd.Write("Congratulations!");
             lcd.SetCursorPosition(1, 1);
             lcd.Write("You Passed!");
+            FlashDisplayBackLight(2, 300, 100);
             SnoozeDisplay(3000, false);
-            TearOffSticker();
+            lcd.Clear();
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write("Wait for other");
+            lcd.SetCursorPosition(0, 1);
+            lcd.Write("player to finish");
+            while (true)
+            {
+                SnoozeDisplay(1000, true);
+                if (!isMessageQueueEmpty()) { break; }
+            }
         }
 
         private void ScanningHealth()
@@ -388,10 +405,11 @@ namespace MakerRanger
             SnoozeDisplay(1000, false);
             lcd.Clear();
             lcd.SetCursorPosition(1, 0);
-            lcd.Write("Healthy animal, ");
+            lcd.Write("100% Healthy");
             lcd.SetCursorPosition(1, 1);
-            lcd.Write("return to wild");
-            SnoozeDisplay(3000, false);
+            SnoozeDisplay(800, false);
+            lcd.Write("Return to wild");
+            SnoozeDisplay(1500, false);
         }
 
         private void PressToScan(string TextArg)
@@ -555,9 +573,9 @@ namespace MakerRanger
 
                 lcd.Clear();
                 lcd.Home();
-                lcd.Write("Jake snake shows");
+                lcd.Write("Follow ");
                 lcd.SetCursorPosition(0, 1);
-                lcd.Write("next to scan");
+                lcd.Write("Jake the snake");
                 if (!isMessageQueueEmpty()) { break; }
                 SnoozeDisplay(3000);
                 if (!isMessageQueueEmpty()) { break; }

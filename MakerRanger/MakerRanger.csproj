@@ -65,6 +65,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Serial\SerialPortHelper.cs" />
     <Compile Include="Settings\Settings.cs" />
+    <Compile Include="Steppers\StepperController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SPOT.Hardware" />

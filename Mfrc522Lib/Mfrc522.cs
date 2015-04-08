@@ -46,7 +46,7 @@ namespace Mfrc522Lib
 
             //Set Max antenna gain
             //PCD_WriteRegister(PCD_Register.RFCfgReg, (0x07 << 4)); //Set the antenna gain to max for best pick up
-            WriteRegister(Registers.ConfigReg, (0x07 << 4));//Set the antenna gain to max for best pick up
+            SetRegisterBits(Registers.ConfigReg, (0x07 << 4));//Set the antenna gain to max for best pick up
                  
             // Enable antenna
             SetRegisterBits(Registers.TxControl, 0x03);
