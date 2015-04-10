@@ -16,13 +16,10 @@ namespace MakerRanger
 {
     public class Program
     {
-        static Boolean isMotorsConnected = true;
+        static Boolean isMotorsConnected = false;
         //static BackStopMonitor oBackStopMonitor;
-        static PersistedStorage oPersistedStorage;
+        //static PersistedStorage oPersistedStorage;
         //static MakerRanger.LEDStripLighting.LEDStrips oLEDStrips = new LEDStripLighting.LEDStrips();
-        //static OpticalSensorArray oOpticalSensorArray = new OpticalSensorArray(250); original used for makerfaire newcastle
-        //static OpticalSensorArray oOpticalSensorArray = new OpticalSensorArray(200); original used for manchester makerfaire
-        static OpticalSensorArray oOpticalSensorArray = new OpticalSensorArray(800);
 
         static SPI SPIInstance = new SPI(new SPI.Configuration(Cpu.Pin.GPIO_NONE, //latchPin,
                 false, // active state
@@ -32,19 +29,13 @@ namespace MakerRanger
                 true,  /// clock edge
                 10000,   // clock rate
                 SPI.SPI_module.SPI1));
+
         static Settings.Settings oSettings;
-        static LCDScreen oLCDScreenA = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D7);
-        static LCDScreen oLCDScreenB = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D6);
+        static LCDScreen oLCDScreenA;
+        static LCDScreen oLCDScreenB;
 
         static Thread LCDThreadA;
         static Thread LCDThreadB;
-
-        //static LEDMatrix.LEDMatrixControllerEyesDisplay oLEDMatrixController = new LEDMatrix.LEDMatrixControllerEyesDisplay(ref SPIInstance);
-        //static Thread LEDMatrixThread;
-        //static LEDMatrix.LEDMatrixReaderDisplayController oLEDMatrixReaderDisplayController = new LEDMatrix.LEDMatrixReaderDisplayController(ref SPIInstance);
-        //static Thread LEDMatrixReaderDisplayThread;
-        //static Thread LEDStripThead;
-
 
 
         static LabelPrinting oLabelPrinting;
@@ -58,51 +49,44 @@ namespace MakerRanger
         private static RfidReader rfidReadera;
         private static RfidReader rfidReaderb;
 
-        
+
 
         private static RFID.RFIDIdentityDictionary oRFIDIdentityDic;
 
-        private static Steppers.StepperController oStepperMotorController = new Steppers.StepperController(0x04);
-
+        private static Steppers.StepperController oStepperMotorController;
+        private static LEDCube.LEDController oLEDController;
 
         public static void Main()
         {
             Debug.EnableGCMessages(true);
 
-
-            // Tie analogue ports high that are not used
-
-            // OutputPort dummy1 = new OutputPort(Pins.GPIO_PIN_A1, true);
-            //OutputPort dummy3 = new OutputPort(Pins.GPIO_PIN_A3, true);
-            // OutputPort dummy4 = new OutputPort(Pins.GPIO_PIN_A4, true);
-
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    Thread.Sleep(1000);
-            //    FanOutput.Write(! FanOutput.Read());
-            //}
-
-            //Switch lights on
-            //oLEDStrips.Normal();
+            oLCDScreenA = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D7);
+            oLCDScreenB = new LCDScreen(ref SPIInstance, Pins.GPIO_PIN_D6);
 
             //Start up the LCD thread first
-
-            ThreadStart tsLCDB = new ThreadStart(oLCDScreenB.StartLCDThread);
-            LCDThreadB = new Thread(tsLCDB);
-            LCDThreadB.Start();
-            oLCDScreenB.AddMessage(LCDScreen.LCDStates.Startup);
-            // Thread.Sleep(10000);
+            // Startup LCD A
             ThreadStart tsLCDA = new ThreadStart(oLCDScreenA.StartLCDThread);
             LCDThreadA = new Thread(tsLCDA);
             LCDThreadA.Start();
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.Startup);
 
+            // Startup LCD B
+            ThreadStart tsLCDB = new ThreadStart(oLCDScreenB.StartLCDThread);
+            LCDThreadB = new Thread(tsLCDB);
+            LCDThreadB.Start();
+            oLCDScreenB.AddMessage(LCDScreen.LCDStates.Startup);
 
-            //Dic holds all the tags and the descriptions
+            //Set up the I2C for controlling the stepper motors
+            oStepperMotorController = new Steppers.StepperController(0x04);
+
+            //Set up the I2C for controlling the cube lighting
+            //oLEDController = new LEDCube.LEDController(0x05);
+
+            //Dictionary holds all the RFID tags IDs and the human readable names from SD card
             oRFIDIdentityDic = new RFID.RFIDIdentityDictionary();
             oRFIDIdentityDic.LoadFromFile();
 
-
+            //Button event handlers
             oButtons.OnButtonADown += ButtonADown;
             oButtons.OnButtonBDown += ButtonBDown;
 
@@ -112,6 +96,7 @@ namespace MakerRanger
             oLabelPrinting.ResetPrinter();
             //2 Seconds after reset before printer available
 
+            //Main Game controller events
             GameController.OnPlayerReady += PlayerisReady;
             GameController.OnPlayersAreReady += PlayersAreReady;
             GameController.OnScanAnimal += ScanAnimal;
@@ -122,11 +107,12 @@ namespace MakerRanger
 
 
             // Add event handler for sticker take message
-            oLabelPrinting.StickerPrinted += new NativeEventHandler(StickerPrintedEvent);
+            oLabelPrinting.StickersPrinted += new NativeEventHandler(StickersPrintedEvent);
 
             rfidReadera = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D9, SPIInstance, Pins.GPIO_PIN_A0);
             rfidReaderb = new RfidReader(oRFIDIdentityDic, Pins.GPIO_PIN_D8, SPIInstance);
             rfidReadera.ResetReaders();
+
             Thread.Sleep(300);
             rfidReadera.InitReader();
             rfidReaderb.InitReader();
@@ -140,7 +126,6 @@ namespace MakerRanger
             rfidReaderb.enabled = true;
 
             //On startup move the pointer to neutral position
-            //Thread.Sleep(5000);
             if (isMotorsConnected)
             {
                 while (true)
@@ -149,7 +134,6 @@ namespace MakerRanger
                     {
                         oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, i);
                         oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, i);
-                        Thread.Sleep(2000);
                     }
 
                 }
@@ -161,21 +145,6 @@ namespace MakerRanger
             //Server oWebServer = new Server(80, false, "192.168.1.118", "255.255.255.0", "192.168.1.254", "NETDUINOPLUS");
             //oWebServer.AfterFileRecieved += new FileProcessed(FileToProcess);
             //oWebServer.AfterSettingsValueSet += new SetSettingsValue(SettingsSetFromEthernet);
-
-
-            //Start up the LED Matrix for eyes
-            //ThreadStart tsLEDMatrix = new ThreadStart(oLEDMatrixController.StartLEDMatrixThread);
-            //LEDMatrixThread = new Thread(tsLEDMatrix);
-            //LEDMatrixThread.Start();
-
-            //Start up the LED Matrix for reader
-            //ThreadStart tsLEDMatrixReaderDisplay = new ThreadStart(oLEDMatrixReaderDisplayController.StartLEDMatrixThread);
-            //LEDMatrixReaderDisplayThread = new Thread(tsLEDMatrixReaderDisplay);
-            //LEDMatrixReaderDisplayThread.Start();
-
-            //int imaxGuessValue = 99;
-            //byte bqtyMaxNumber = 3;
-
 
             //oSettings = new Settings.Settings();
             //oSettings.Load("iniSettings",false);
@@ -189,21 +158,6 @@ namespace MakerRanger
             //    oSettings.SetValue("standard", @"qtyMaxNumber", bqtyMaxNumber);
             //}
             //oSettings.Save("iniSettings");
-
-            //oLCDScreenA.MaxChooseValue = oSettings.GetValue("standard", @"maxGuessValue");
-
-            // Gets any previous guesses from SD card storage and/or initialises the secret number
-            //	oPersistedStorage = new PersistedStorage(Int32.Parse( oSettings.GetValue("standard", @"maxGuessValue")), Byte.Parse( oSettings.GetValue("standard", @"qtyMaxNumber")));
-            //oLEDMatrixController.PreviousGuesses = oPersistedStorage.GuessHistory;
-
-            //Back stop monitor raises events for the card reaching the back of the reader timer Threshold voltage
-            //oBackStopMonitor = new BackStopMonitor(new AnalogInput(AnalogChannels.ANALOG_PIN_A0), 300, 600);
-
-            //Wire up event handlers
-            //oBackStopMonitor.AnalogInterrupt += new NativeEventHandler(CardInsertedEvent);
-            //oBackStopMonitor.AnalogInterruptCardRemoved += new NativeEventHandler(CardRemovedEvent);
-
-            //oOpticalSensorArray.CardRead += new NativeEventHandler(CardReadEvent);
 
             //Sleep forever to keep static objects alive forever
             Thread.Sleep(Timeout.Infinite);
@@ -289,13 +243,8 @@ namespace MakerRanger
                 oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
                 if (isMotorsConnected)
                 {
-                    if (isMotorsConnected)
-                    {
-                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, (short)GameController.RoundListB.CurentItemID());
-                    }
-
+                    oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, (short)GameController.RoundListB.CurentItemID());
                 }
-
             }
         }
 
@@ -306,7 +255,6 @@ namespace MakerRanger
             if (data1 == 0)
             {
                 oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
-
             }
             else
             {
@@ -321,8 +269,9 @@ namespace MakerRanger
             }
 
             // Tell them to take stickers
-            oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
-            oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            oLabelPrinting.RecallFormAndPrint(0,"makerranger", (short) 2);
+            //oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            //oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
 
             //Reset game, save game data
             GameController.SaveRoundsToFile();
@@ -379,14 +328,14 @@ namespace MakerRanger
             oSettings.SetValue("standard", @"maxGuessValue", MaxGuessValue);
             oSettings.SetValue("standard", @"qtyMaxNumber", MaxQtyValue);
             //oLCDScreenA.MaxChooseValue = oSettings.GetValue("standard", @"maxGuessValue");
-            oPersistedStorage.MaxGuessValue = int.Parse(MaxGuessValue);
-            oPersistedStorage.qtyMaxNumber = byte.Parse(MaxQtyValue);
+            //oPersistedStorage.MaxGuessValue = int.Parse(MaxGuessValue);
+            //oPersistedStorage.qtyMaxNumber = byte.Parse(MaxQtyValue);
             oSettings.Save("iniSettings");
 
 
         }
 
-        private static void StickerPrintedEvent(uint data1, uint data2, DateTime time)
+        private static void StickersPrintedEvent(uint data1, uint data2, DateTime time)
         {
             //Tell user to take sticker
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);

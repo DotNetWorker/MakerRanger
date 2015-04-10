@@ -9,7 +9,7 @@ namespace MakerRanger
     class LabelPrinting
     {
 
-        public event NativeEventHandler StickerPrinted;
+        public event NativeEventHandler StickersPrinted;
 
         //Zebra printer using EPL is hidden behind the serial port helper
         // Defaults to: SerialPorts.COM1 (uses D0 and D1), 9600, Parity.None, 8, StopBits.One
@@ -34,36 +34,36 @@ namespace MakerRanger
         //    serialPortHelper.PrintLine(@"FE");
         //    serialPortHelper.PrintLine("");
         //}
-        public void RecallFormAndPrint(int pauseTime,string FormName, PersistedStorage oPersistedStorage, string GuessValue, Boolean Winner)
+        public void RecallFormAndPrint(int pauseTime,string FormName, short Copies)
         {
             System.Threading.Thread.Sleep(pauseTime);
 
             serialPortHelper.PrintLine("\n");
-            serialPortHelper.PrintLine(oPersistedStorage.GetFormText(FormName));
+            serialPortHelper.PrintLine(PersistedStorage.GetFormText(@"SD\PrinterForms\" , FormName));
 
             if (FormName == @"03")
             {
-                if (Winner)
-                {
-                    serialPortHelper.PrintLine(@"A70,300,0,1,2,2,R,""I guessed it!""");
-                }
-                else
-                {
-                    serialPortHelper.PrintLine(@"A175,332,0,1,1,1,N,""GUESS""");
-                    serialPortHelper.PrintLine(@"A172,348,0,3,2,2,R,""" + GuessValue + @"""");
-                }
+                //if (Winner)
+                //{
+                //    serialPortHelper.PrintLine(@"A70,300,0,1,2,2,R,""I guessed it!""");
+                //}
+                //else
+                //{
+                //    serialPortHelper.PrintLine(@"A175,332,0,1,1,1,N,""GUESS""");
+                //    serialPortHelper.PrintLine(@"A172,348,0,3,2,2,R,""" + GuessValue + @"""");
+                //}
             }
             else if (FormName == @"04")
             {
-                if (Winner)
-                {
-                    serialPortHelper.PrintLine(@"A70,268,0,1,2,2,R,""I guessed it!""");
-                }
-                else
-                {
-                    serialPortHelper.PrintLine(@"A175,332,0,1,1,1,N,""GUESS""");
-                    serialPortHelper.PrintLine(@"A172,348,0,3,2,2,R,""" + GuessValue + @"""");
-                }
+                //if (Winner)
+                //{
+                //    serialPortHelper.PrintLine(@"A70,268,0,1,2,2,R,""I guessed it!""");
+                //}
+                //else
+                //{
+                //    serialPortHelper.PrintLine(@"A175,332,0,1,1,1,N,""GUESS""");
+                //    serialPortHelper.PrintLine(@"A172,348,0,3,2,2,R,""" + GuessValue + @"""");
+                //}
                 
                 //Print Graphics if required
                 // GW top left width height
@@ -76,8 +76,8 @@ namespace MakerRanger
 
 
             //Number of labels to print
-            serialPortHelper.PrintLine(@"P1,1");
-            StickerPrinted(new uint(), new uint(), new DateTime());
+            serialPortHelper.PrintLine(@"P" + Copies.ToString() + ",1");
+            StickersPrinted(new uint(), new uint(), new DateTime());
                 
         }
 

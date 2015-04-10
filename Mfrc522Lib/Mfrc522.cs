@@ -9,24 +9,45 @@ namespace Mfrc522Lib
     {
         private OutputPort _resetPowerDown, _ss;
         private SPI _spi;
-
+        private SPI.Configuration SPIConfig;
+      
         public Mfrc522(SPI SPIInstance, Cpu.Pin ssPin, Cpu.Pin resetPowerDownPin)
+            :this(SPIInstance, ssPin)
         {
             _resetPowerDown = new OutputPort(resetPowerDownPin, true);
-            Init(SPIInstance, ssPin);
         }
 
         public Mfrc522(SPI SPIInstance, Cpu.Pin ssPin)
         {
-            Init(SPIInstance, ssPin);
+            _ss = new OutputPort(ssPin, true);
+            this.SPIConfig = new SPI.Configuration(
+               Cpu.Pin.GPIO_NONE, //latchPin,
+               false, // active state
+               0,     // setup time
+               0,     // hold time 
+               false, // clock idle state
+               true,  // clock edge
+               10000,   // clock rate
+               SPI.SPI_module.SPI1);
+            _spi = SPIInstance;
         }
 
-        public void Init(SPI SPIInstance, Cpu.Pin ssPin)
-        {
-            _ss = new OutputPort(ssPin, true);
-            _spi = SPIInstance;
-            //Reset();
-        }
+        //public void Init(SPI SPIInstance, Cpu.Pin ssPin)
+        //{
+        //    _ss = new OutputPort(ssPin, true);
+        //    this.SPIConfig = new SPI.Configuration(
+        //       Cpu.Pin.GPIO_NONE, //latchPin,
+        //       false, // active state
+        //       0,     // setup time
+        //       0,     // hold time 
+        //       false, // clock idle state
+        //       true,  // clock edge
+        //       10000,   // clock rate
+        //       SPI.SPI_module.SPI1);
+        //    _spi = SPIInstance;
+
+        //    //Reset();
+        //}
 
         public void Reset()
         {
@@ -47,7 +68,7 @@ namespace Mfrc522Lib
             //Set Max antenna gain
             //PCD_WriteRegister(PCD_Register.RFCfgReg, (0x07 << 4)); //Set the antenna gain to max for best pick up
             SetRegisterBits(Registers.ConfigReg, (0x07 << 4));//Set the antenna gain to max for best pick up
-                 
+
             // Enable antenna
             SetRegisterBits(Registers.TxControl, 0x03);
         }
@@ -266,11 +287,14 @@ namespace Mfrc522Lib
         private byte[] TransferSpi(byte[] writeBuffer)
         {
             var readBuffer = new byte[writeBuffer.Length];
-
-            _ss.Write(false);
-            _spi.WriteRead(writeBuffer, readBuffer);
-            _ss.Write(true);
-
+            //only one spi device at a time may be on the bus close it down to one thread at a time
+            lock (_spi)
+            {
+                _spi.Config = this.SPIConfig;
+                _ss.Write(false);
+                _spi.WriteRead(writeBuffer, readBuffer);
+                _ss.Write(true);
+            }
             return readBuffer;
         }
     }

@@ -106,7 +106,6 @@ namespace MakerRanger.Game
         {
             this.IsSinglePlayermode = false;
             // class initializer
-
         }
 
         public void ButtonAPressed()
@@ -131,7 +130,6 @@ namespace MakerRanger.Game
                     if (!(this.PlayerAReady)) { this.PlayerAReady = true; } 
                 }  // Before game
             }
-
         }
 
         public void ButtonBPressed()
@@ -156,7 +154,6 @@ namespace MakerRanger.Game
                     if (!(this.PlayerBReady)) { this.PlayerBReady = true; }
                 }  // Before game
             }
-
         }
 
         public void DetectedAEmpty()
@@ -171,7 +168,6 @@ namespace MakerRanger.Game
             // if cage goes empty while wating for scan
             // set waiting for scan to false and let them go back through the detection, need to think about removing the prev time?- or make
             // scan be dated action
-
         }
 
         public void ResetPlayersReady()

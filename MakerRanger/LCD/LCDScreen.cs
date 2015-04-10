@@ -215,7 +215,7 @@ namespace MakerRanger
 
             lcd.Clear();
             lcd.SetCursorPosition(4, 0);
-            lcd.Write("Take sticker");
+            lcd.Write("Take badge");
 
             lcd.SetCursorPosition(4, 1);
             lcd.Write("tear upward");
@@ -332,11 +332,8 @@ namespace MakerRanger
             lcd.Write("Catch a ...");
             lcd.SetCursorPosition(0, 1);
             lcd.Write(TextArgs);
-            while (true)
-            {
-                SnoozeDisplay(1000);
-                if (!isMessageQueueEmpty()) { break; }
-            }
+            SnoozeDisplay(1000);
+            DisplaySnoozeWaitForNextMessage();
         }
         private void HealthCheckOK()
         {
@@ -358,21 +355,23 @@ namespace MakerRanger
             lcd.Visible = true;
             lcd.Clear();
             lcd.SetCursorPosition(1, 0);
-            lcd.Write("Congratulations!");
+            lcd.Write("Congratulations");
             lcd.SetCursorPosition(1, 1);
             lcd.Write("You Passed!");
             FlashDisplayBackLight(2, 300, 100);
             SnoozeDisplay(3000, false);
             lcd.Clear();
             lcd.SetCursorPosition(0, 0);
+            lcd.Write("You are now a");
+            lcd.SetCursorPosition(1, 1);
+            lcd.Write("--Maker Ranger--");
+            SnoozeDisplay(3000, false);
+            lcd.Clear();
+            lcd.SetCursorPosition(0, 0);
             lcd.Write("Wait for other");
             lcd.SetCursorPosition(0, 1);
             lcd.Write("player to finish");
-            while (true)
-            {
-                SnoozeDisplay(1000, true);
-                if (!isMessageQueueEmpty()) { break; }
-            }
+            DisplaySnoozeWaitForNextMessage();
         }
 
         private void ScanningHealth()
@@ -429,13 +428,17 @@ namespace MakerRanger
             lcd.SetCursorPosition(1, 1);
             lcd.Write("to scan health");
 
-            while (true)
-            {
-                SnoozeDisplay(1000);
-                if (!isMessageQueueEmpty()) { break; }
-            }
+            DisplaySnoozeWaitForNextMessage();
         }
 
+        private void DisplaySnoozeWaitForNextMessage()
+        {
+            while (true)
+            {
+                if (!isMessageQueueEmpty()) { break; }
+                System.Threading.Thread.Sleep(50);
+            }
+        }
 
         private void GetReady()
         {
@@ -446,7 +449,7 @@ namespace MakerRanger
             lcd.Write("Waiting for next");
             lcd.SetCursorPosition(0, 1);
             lcd.Write("player to start");
-            SnoozeDisplay(300000, true);
+            DisplaySnoozeWaitForNextMessage();
         }
 
 
@@ -557,11 +560,11 @@ namespace MakerRanger
                 //lcd.SetCursorPosition(0, 1);
                 //lcd.Write("by passing test");
 
-                SnoozeDisplay(3000);
-                lcd.Clear();
+                //SnoozeDisplay(3000);
+                //lcd.Clear();
                 lcd.Home();
                 lcd.SetCursorPosition(0, 0);
-                lcd.Write("to be a ranger");
+                lcd.Write("Become a ranger");
                 lcd.SetCursorPosition(0, 1);
                 lcd.Write("pass this test");
 
@@ -573,36 +576,45 @@ namespace MakerRanger
 
                 lcd.Clear();
                 lcd.Home();
-                lcd.Write("Follow ");
+                lcd.Write("follow ");
                 lcd.SetCursorPosition(0, 1);
                 lcd.Write("Jake the snake");
                 if (!isMessageQueueEmpty()) { break; }
                 SnoozeDisplay(3000);
+                ScrollMessage(17, 50);
                 if (!isMessageQueueEmpty()) { break; }
+              
                 lcd.Clear();
                 lcd.SetCursorPosition(0, 0);
-                lcd.Write("Get ready to...");
-                if (!isMessageQueueEmpty()) { break; }
-                lcd.SetCursorPosition(0, 1);
                 SnoozeDisplay(500);
                 if (!isMessageQueueEmpty()) { break; }
                 for (int i = 0; i < 15; i++)
                 {
                     System.Threading.Thread.Sleep(50);
-                    lcd.SetCursorPosition(i, 1);
+                    lcd.SetCursorPosition(i, 0);
                     lcd.Write(new byte[] { 0xFF }, 0, 1);
                 }
                 for (int i = 0; i < 15; i++)
                 {
+                    // Health scan
                     System.Threading.Thread.Sleep(30);
-                    lcd.SetCursorPosition(i, 1);
-                    if (i == 5) { lcd.Write("S"); }
-                    else if (i == 6) { lcd.Write("C"); }
-                    else if (i == 7) { lcd.Write("A"); }
-                    else if (i == 8) { lcd.Write("N"); }
+                    lcd.SetCursorPosition(i, 0);
+                    if (i == 2) { lcd.Write("H"); }
+                    else if (i == 3) { lcd.Write("E"); }
+                    else if (i == 4) { lcd.Write("A"); }
+                    else if (i == 5) { lcd.Write("L"); }
+                    else if (i == 6) { lcd.Write("T"); }
+                    else if (i == 7) { lcd.Write("H"); }
+                    else if (i == 9) { lcd.Write("S"); }
+                    else if (i == 10) { lcd.Write("C"); }
+                    else if (i == 11) { lcd.Write("A"); }
+                    else if (i == 12) { lcd.Write("N"); }
                     else { lcd.Write(" "); }
 
                 }
+                lcd.SetCursorPosition(2, 1);
+                lcd.Write("the animals...");
+                if (!isMessageQueueEmpty()) { break; }
 
                 SnoozeDisplay(3000);
                 if (!isMessageQueueEmpty()) { break; }

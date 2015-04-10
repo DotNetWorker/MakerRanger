@@ -13,7 +13,7 @@ namespace MakerRanger
         private const string GuessHistoryLogFilename = @"SD\GuessHistoryLog.txt";
 		
         private const string CurrentSecretNumberFilename = @"SD\SecretNumber.txt";
-		private const string PrinterFormsFolder = @"SD\PrinterForms\";
+		//private const string PrinterFormsFolder = @"SD\PrinterForms\";
 				
 		// Array list to receive the guesses 
 		public  ArrayList GuessHistory = new ArrayList();
@@ -177,7 +177,8 @@ namespace MakerRanger
 			}
 		}
 
-		public ArrayList GetLabelFormNamesFromSD() {
+        public ArrayList GetLabelFormNamesFromSD(string PrinterFormsFolder)
+        {
 			//Going to be 01 - 99.txt
 			ArrayList Results = new ArrayList();
 			foreach (var  CurrentFileName in Directory.GetFiles(PrinterFormsFolder))
@@ -188,7 +189,7 @@ namespace MakerRanger
 		}
 
 		//From SD Store get the file text for the supplied form format
-		public String GetFormText(String FormName)
+		public static String GetFormText(string PrinterFormsFolder, String FormName)
 		{
 			string Result;
 			using (var filestream = new FileStream(PrinterFormsFolder  + FormName + ".txt", FileMode.Open , FileAccess.Read,FileShare.Read,8))
@@ -238,7 +239,7 @@ namespace MakerRanger
                 response.Flush();
                
             }
-            catch (Exception e)
+            catch (Exception )
             {
                 if (fileToServe != null)
                 {

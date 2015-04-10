@@ -46,6 +46,7 @@
     <Compile Include="LCDLib\Shifter74Hc595LcdTransferProvider.cs" />
     <Compile Include="LCDLib\ShifterPin.cs" />
     <Compile Include="LCD\LCDMessage.cs" />
+    <Compile Include="LEDCube\LEDController.cs" />
     <Compile Include="LEDMatrix\LEDMatrixReaderDisplayController.cs" />
     <Compile Include="LEDMatrix\Max72197221.cs" />
     <Compile Include="LEDMatrix\LEDMatrixEyesDisplayController.cs" />
@@ -54,13 +55,12 @@
     <Compile Include="RFID\RFIDIdentityDictionary.cs" />
     <Compile Include="RFID\RfidReader.cs" />
     <Compile Include="RFID\Utility.cs" />
-    <Compile Include="Sensors\BackStopMonitor.cs" />
+    <Compile Include="SD Storage\PersistedStorage.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Printing\LabelPrinting.cs" />
     <Compile Include="LCD\LCDScreen.cs" />
     <Compile Include="Sensors\Buttons.cs" />
-    <Compile Include="Sensors\Multiplexer.cs" />
-    <Compile Include="Sensors\OpticalSensorArray.cs" />
-    <Compile Include="SD Storage\PersistedStorage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Serial\SerialPortHelper.cs" />
