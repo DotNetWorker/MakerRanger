@@ -99,7 +99,7 @@ namespace MakerRanger
             //Main Game controller events
             GameController.OnPlayerReady += PlayerisReady;
             GameController.OnPlayersAreReady += PlayersAreReady;
-            GameController.OnScanAnimal += ScanAnimal;
+            GameController.OnNextAnimalPush += NextAnimalPushed;
             GameController.OnNextAnimal += NextAnimal;
             GameController.OnEndOfRound += EndOfRound;
             GameController.OnEndOfGame += EndOfGame;
@@ -128,15 +128,9 @@ namespace MakerRanger
             //On startup move the pointer to neutral position
             if (isMotorsConnected)
             {
-                while (true)
-                {
-                    for (short i = 0; i < 20; i++)
-                    {
-                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, i);
-                        oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, i);
-                    }
+                oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerA, 19);
+                oStepperMotorController.MoveToPosition(Steppers.StepperController.PlayerType.PlayerB, 19);
 
-                }
 
 
             }
@@ -178,18 +172,16 @@ namespace MakerRanger
             }
         }
 
-        private static void ScanAnimal(uint data1, uint data2, DateTime time)
+        private static void NextAnimalPushed(uint data1, uint data2, DateTime time)
         {
             //by convention 0=A and 1=B
             if (data1 == 0)
             {
-                oLCDScreenA.AddMessage(LCDScreen.LCDStates.ScanningHealth);
                 GameController.NextInRound(Game.Game.PlayerType.PlayerA);
 
             }
             else
             {
-                oLCDScreenB.AddMessage(LCDScreen.LCDStates.ScanningHealth);
                 GameController.NextInRound(Game.Game.PlayerType.PlayerB);
             }
         }
@@ -249,17 +241,39 @@ namespace MakerRanger
         }
 
 
+        private static string PadLeft(string input, int length, string PadChar)
+        {
+            while (input.Length < length)
+            {
+                input = string.Concat(PadChar, input);
+
+            }
+            return input;
+
+        }
+
         private static void EndOfGame(uint data1, uint data2, DateTime time)
         {
+
+
+           
             //End of game by nature should show on both screens
             if (data1 == 0)
             {
-                oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
+                TimeSpan ElapsedTime = (GameController.GameFinishedTimeA - GameController.GameStartedTime);
+                oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.TestComplete, (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0"))));
+                //print sticker for player A
+                oLabelPrinting.PrintStoredForm(0, "MRanger", "A-Time " + (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0")));
             }
             else
             {
-                oLCDScreenB.AddMessage(LCDScreen.LCDStates.TestComplete);
+                TimeSpan ElapsedTime = (GameController.GameFinishedTimeB - GameController.GameStartedTime);
+                oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.TestComplete, (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0"))));
+                //print sticker for player B
+                oLabelPrinting.PrintStoredForm(0, "MRanger", "B-Time " + (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0")));
             }
+
+
 
             //move back to rest postion
             if (isMotorsConnected)
@@ -269,12 +283,17 @@ namespace MakerRanger
             }
 
             // Tell them to take stickers
-            oLabelPrinting.RecallFormAndPrint(0,"makerranger", (short) 2);
+            //oLabelPrinting.RecallFormAndPrint(0, "makerranger", (short)2);
+
+
             //oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
             //oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
 
             //Reset game, save game data
             GameController.SaveRoundsToFile();
+
+
+
             GameController.InProgressA = false;
             GameController.InProgressB = false;
             //oLCDScreenA.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
@@ -286,12 +305,16 @@ namespace MakerRanger
         {
             if (data1 == 0)
             {
-                oLCDScreenA.AddMessage(LCDScreen.LCDStates.TestComplete);
+                TimeSpan ElapsedTime = (GameController.GameFinishedTimeA - GameController.GameStartedTime);
+                oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.TestComplete, (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0"))));
+
 
             }
             else
             {
-                oLCDScreenB.AddMessage(LCDScreen.LCDStates.TestComplete);
+                TimeSpan ElapsedTime = (GameController.GameFinishedTimeB - GameController.GameStartedTime);
+                oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.TestComplete, (ElapsedTime.Minutes.ToString() + ":" + PadLeft(ElapsedTime.Seconds.ToString(), 2, "0"))));
+
             }
         }
 
@@ -363,12 +386,15 @@ namespace MakerRanger
             {
                 if (GameController.RoundListA.isCurrentItem((int)e.TagIndex))
                 {
-                    //Correct tag in place
-                    //Log time and ask to scan
+                    if (!(GameController.AwaitingNextPushA))
+                    {
+                        GameController.AwaitingNextPushA = true;
+                        //Correct tag in place
+                        //Log time and ask to scan
+                        oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToNextAnimal, e.TagIdentityText));
+                        GameController.RoundTimesA.Enqueue(e.TagReadTime);
 
-                    oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan, e.TagIdentityText));
-                    GameController.RoundTimesA.Enqueue(e.TagReadTime);
-                    GameController.AwaitingScanA = true;
+                    }
 
                 }
                 else
@@ -391,12 +417,15 @@ namespace MakerRanger
             {
                 if (GameController.RoundListB.isCurrentItem((int)e.TagIndex))
                 {
-                    //Correct tag in place
-                    //Log time and ask to scan
+                    if (!(GameController.AwaitingNextPushB))
+                    {
+                        GameController.AwaitingNextPushB = true;
+                        //Correct tag in place
+                        //Log time and ask to scan
 
-                    oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToScan, e.TagIdentityText));
-                    GameController.RoundTimesB.Enqueue(e.TagReadTime);
-                    GameController.AwaitingScanB = true;
+                        oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.PressToNextAnimal, e.TagIdentityText));
+                        GameController.RoundTimesB.Enqueue(e.TagReadTime);
+                    }
                 }
                 else
                 {

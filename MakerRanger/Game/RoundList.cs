@@ -73,6 +73,6 @@ namespace MakerRanger.Game
             return (byte)this[this.Position];
         }
 
-
+       
     }
 }

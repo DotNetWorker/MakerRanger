@@ -78,6 +78,8 @@
     <Reference Include="System.IO" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Docs\Disk Animals.pub" />
+    <None Include="Docs\MakerRangerTags.xlsx" />
     <None Include="Label Templates\smlvader.txt" />
   </ItemGroup>
   <ItemGroup>

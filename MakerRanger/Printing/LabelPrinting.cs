@@ -67,18 +67,32 @@ namespace MakerRanger
                 
                 //Print Graphics if required
                 // GW top left width height
+                
                 serialPortHelper.Print(@"GW90,10,25,200,");
                 PersistedStorage.SendFileToSerial(serialPortHelper, @"SD\transfertmp.tmp");
 
                 serialPortHelper.PrintLine(@"");
             }
-
-
-
+       
+           
             //Number of labels to print
             serialPortHelper.PrintLine(@"P" + Copies.ToString() + ",1");
             StickersPrinted(new uint(), new uint(), new DateTime());
                 
+        }
+
+        public void PrintStoredForm(int pauseTime,string StoredFormName, string GameNumber )
+        {
+            serialPortHelper.PrintLine("\n");
+            System.Threading.Thread.Sleep(pauseTime);
+            serialPortHelper.PrintLine("N");
+            serialPortHelper.PrintLine("FR\""+ StoredFormName +"\"");
+            // serial number
+            //A249,369,2,2,1,1,N,"#012323"
+            serialPortHelper.PrintLine("A249,369,2,2,1,1,N,\"#" + GameNumber + "\"");
+            //Number of labels to print
+            serialPortHelper.PrintLine(@"P1,1");
+            StickersPrinted(new uint(), new uint(), new DateTime());
         }
 
         public void ResetPrinter()

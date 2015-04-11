@@ -29,7 +29,7 @@ namespace MakerRanger
         {
             WelcomeMessages,
             Startup,
-            PressToScan,
+            PressToNextAnimal,
             TakeSticker,
             GetReady,
             ScanningHealth,
@@ -117,7 +117,7 @@ namespace MakerRanger
             }
             else if (this.CurrentState.LCDState == LCDStates.TestComplete)
             {
-                TestComplete();
+                TestComplete(this.CurrentState.MessageArgument);
             }
             else if (this.CurrentState.LCDState == LCDStates.WrongAnimalTryAgain)
             {
@@ -147,7 +147,7 @@ namespace MakerRanger
             {
                 TwoPlayerMode();
             }
-            else if (this.CurrentState.LCDState == LCDStates.PressToScan)
+            else if (this.CurrentState.LCDState == LCDStates.PressToNextAnimal)
             {
                 PressToScan(this.CurrentState.MessageArgument);
             }
@@ -349,21 +349,21 @@ namespace MakerRanger
         }
 
 
-        private void TestComplete()
+        private void TestComplete(string MessageArgument)
         {
             lcd.Backlight = true;
             lcd.Visible = true;
             lcd.Clear();
             lcd.SetCursorPosition(1, 0);
-            lcd.Write("Congratulations");
-            lcd.SetCursorPosition(1, 1);
             lcd.Write("You Passed!");
+            lcd.SetCursorPosition(1, 1);
+            lcd.Write("taking " + MessageArgument);
             FlashDisplayBackLight(2, 300, 100);
             SnoozeDisplay(3000, false);
             lcd.Clear();
             lcd.SetCursorPosition(0, 0);
             lcd.Write("You are now a");
-            lcd.SetCursorPosition(1, 1);
+            lcd.SetCursorPosition(0, 1);
             lcd.Write("--Maker Ranger--");
             SnoozeDisplay(3000, false);
             lcd.Clear();
@@ -416,17 +416,21 @@ namespace MakerRanger
             lcd.Backlight = true;
             lcd.Visible = true;
             lcd.Clear();
-            lcd.SetCursorPosition(1, 0);
-            lcd.Write(TextArg);
-            lcd.SetCursorPosition(4, 1);
-            lcd.Write("Well Done!");
-            SnoozeDisplay(1500, false);
+            //lcd.SetCursorPosition(1, 0);
+            //lcd.Write(TextArg);
+            //lcd.SetCursorPosition(4, 1);
+            //lcd.Write("Well Done!");
+            //SnoozeDisplay(1500, false);
+
+
+            ScanningHealth();
+
 
             lcd.Clear();
-            lcd.SetCursorPosition(1, 0);
+            lcd.SetCursorPosition(0, 0);
             lcd.Write("Press button");
-            lcd.SetCursorPosition(1, 1);
-            lcd.Write("to scan health");
+            lcd.SetCursorPosition(0, 1);
+            lcd.Write("for next animal");
 
             DisplaySnoozeWaitForNextMessage();
         }

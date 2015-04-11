@@ -21,7 +21,7 @@ namespace MakerRanger.Game
         public event NativeEventHandler OnPlayersAreReady;
         public event NativeEventHandler OnPlayerReady;
 
-        public event NativeEventHandler OnScanAnimal;
+        public event NativeEventHandler OnNextAnimalPush;
 
         public event NativeEventHandler OnEndOfRound;
         public event NativeEventHandler OnEndOfGame;
@@ -36,9 +36,12 @@ namespace MakerRanger.Game
         public bool IsSinglePlayermode { get; set; }
 
         //Awaiting push button to scan animal
-        public bool AwaitingScanA { get; set; }
-        public bool AwaitingScanB { get; set; }
+        public bool AwaitingNextPushA { get; set; }
+        public bool AwaitingNextPushB { get; set; }
 
+        public DateTime GameStartedTime { get; set; }
+        public DateTime GameFinishedTimeA { get; set; }
+        public DateTime GameFinishedTimeB { get; set; }
 
         public enum PlayerType : byte
         {
@@ -57,9 +60,9 @@ namespace MakerRanger.Game
                 if (this.Enabled)
                 {
                     _PlayerAReady = value;
-                    if ((value & PlayerBReady) | (this.IsSinglePlayermode)) 
+                    if ((value & PlayerBReady) | (this.IsSinglePlayermode))
                     {
-                        PlayersAreReady(); 
+                        PlayersAreReady();
                     }
                     else
                     {
@@ -83,9 +86,9 @@ namespace MakerRanger.Game
                 if ((this.Enabled) & !(this.IsSinglePlayermode))
                 {
                     _PlayerBReady = value;
-                    if (value & PlayerAReady) 
-                    { 
-                        PlayersAreReady(); 
+                    if (value & PlayerAReady)
+                    {
+                        PlayersAreReady();
                     }
                     else
                     {
@@ -114,20 +117,20 @@ namespace MakerRanger.Game
             {
                 if (this.InProgressA)
                 {
-                    if (this.AwaitingScanA)
+                    if (this.AwaitingNextPushA)
                     {
                         //raise event to say do scanning sequence for A
-                        this.AwaitingScanA = false;
-                        NativeEventHandler ScanAnimal = OnScanAnimal;
-                        if (ScanAnimal != null)
+                        this.AwaitingNextPushA = false;
+                        NativeEventHandler NextAnimalPush = OnNextAnimalPush;
+                        if (NextAnimalPush != null)
                         {
-                            ScanAnimal((uint)0, (uint)1, DateTime.Now);
+                            NextAnimalPush((uint)0, (uint)1, DateTime.Now);
                         }
                     }
                 }
                 else if (!(this.InProgressA) && !(this.InProgressB))
                 {
-                    if (!(this.PlayerAReady)) { this.PlayerAReady = true; } 
+                    if (!(this.PlayerAReady)) { this.PlayerAReady = true; }
                 }  // Before game
             }
         }
@@ -138,11 +141,11 @@ namespace MakerRanger.Game
             {
                 if (this.InProgressB)
                 {
-                    if (this.AwaitingScanB)
+                    if (this.AwaitingNextPushB)
                     {
                         //raise event to say do scanning sequence for B
-                        this.AwaitingScanB = false;
-                        NativeEventHandler ScanAnimal = OnScanAnimal;
+                        this.AwaitingNextPushB = false;
+                        NativeEventHandler ScanAnimal = OnNextAnimalPush;
                         if (ScanAnimal != null)
                         {
                             ScanAnimal((uint)1, (uint)1, DateTime.Now);
@@ -191,13 +194,23 @@ namespace MakerRanger.Game
             //Clear previous rounds and create new lists to catch
             RoundTimesA.Clear();
             RoundTimesB.Clear();
+            GameStartedTime = DateTime.Now;
             RoundListA.NewList(2, 15);
             if (!(this.IsSinglePlayermode))
             {
                 RoundListB.NewList(2, 15);
+                if (!(InProgressB)) { this.InProgressB = true; }
+
             }
             if (!(InProgressA)) { this.InProgressA = true; }
-            if (!(InProgressB)) { this.InProgressB = true; }
+            //Start Time
+            RoundTimesA.Enqueue(DateTime.Now);
+            if (!(this.IsSinglePlayermode))
+            {
+                //Start Time
+                RoundTimesB.Enqueue(DateTime.Now);
+            }
+
             ResetPlayersReady();
         }
 
@@ -215,11 +228,12 @@ namespace MakerRanger.Game
                         NativeEventHandler PlayerEndOfGame = OnEndOfGame;
                         if (PlayerEndOfGame != null)
                         {
+                            GameFinishedTimeA = DateTime.Now;
                             //0 by convention means player B
                             PlayerEndOfGame((uint)0, (uint)0, DateTime.Now);
                         }
                         this.InProgressA = false;
-                       
+
                     }
                     else
                     {
@@ -227,6 +241,7 @@ namespace MakerRanger.Game
                         NativeEventHandler PlayerEndOfRound = OnEndOfRound;
                         if (PlayerEndOfRound != null)
                         {
+                            GameFinishedTimeA = DateTime.Now;
                             //0 by convention means player A
                             PlayerEndOfRound((uint)0, (uint)0, DateTime.Now);
                         }
@@ -254,6 +269,7 @@ namespace MakerRanger.Game
                         NativeEventHandler PlayerEndOfGame = OnEndOfGame;
                         if (PlayerEndOfGame != null)
                         {
+                            GameFinishedTimeB = DateTime.Now;
                             //1 by convention means player B
                             PlayerEndOfGame((uint)1, (uint)0, DateTime.Now);
                         }
@@ -265,6 +281,7 @@ namespace MakerRanger.Game
                         NativeEventHandler PlayerEndOfRound = OnEndOfRound;
                         if (PlayerEndOfRound != null)
                         {
+                            GameFinishedTimeB = DateTime.Now;
                             // 1 by convention means player B
                             PlayerEndOfRound((uint)1, (uint)0, DateTime.Now);
                         }
@@ -288,31 +305,35 @@ namespace MakerRanger.Game
         public void SaveRoundsToFile()
         {
             //Use the this.ID as filename
-            SaveRoundToFile(this.RoundListA);
+            SaveRoundToFile(this.RoundListA, this.RoundTimesA);
             if (!(this.IsSinglePlayermode))
             {
-              SaveRoundToFile(this.RoundListB);
+                SaveRoundToFile(this.RoundListB, this.RoundTimesB);
             }
         }
 
-        private void SaveRoundToFile(RoundList ThisRoundList)
+        private void SaveRoundToFile(RoundList ThisRoundList,Queue RoundTimes )
         {
             if (!(Directory.Exists(GameLogSDFolder)))
             {
                 Directory.CreateDirectory(GameLogSDFolder);
             }
+
+            DateTime StartTime = (DateTime) RoundTimes.Dequeue();
             //Write the log of each player round to file
             using (var filestream = new FileStream(GameLogSDFolder + ThisRoundList.ID.ToString(), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write, 8))
-			{
-				using (var streamWriter = new StreamWriter(filestream))
-				{
-                    for (int i = 0; i < ThisRoundList.Count-1; i++)
+            {
+                using (var streamWriter = new StreamWriter(filestream))
+                {
+                    for (int i = 0; i < ThisRoundList.Count - 1; i++)
                     {
-                        streamWriter.WriteLine(ThisRoundList[i].ToString());
+                        //Get time since started as seconds
+                        TimeSpan ElapsedTime = (StartTime - (DateTime)RoundTimes.Dequeue());
+                        streamWriter.WriteLine(ThisRoundList[i].ToString() + "\t" +  ((ElapsedTime.Minutes*60)+ElapsedTime.Seconds).ToString());
                     }
-					streamWriter.Close();
-				}
-			}
+                    streamWriter.Close();
+                }
+            }
 
         }
 
@@ -320,7 +341,7 @@ namespace MakerRanger.Game
         //Raise event to start scanning sequence
         private void OnScanAnimalA()
         {
-            NativeEventHandler ScanAnimal = OnScanAnimal;
+            NativeEventHandler ScanAnimal = OnNextAnimalPush;
             if (ScanAnimal != null)
             {
                 //By convention well pass 0 for A and 1 for B
@@ -332,7 +353,7 @@ namespace MakerRanger.Game
         //Raise event to start scanning sequence
         private void OnScanAnimalB()
         {
-            NativeEventHandler ScanAnimal = OnScanAnimal;
+            NativeEventHandler ScanAnimal = OnNextAnimalPush;
             if (ScanAnimal != null)
             {
                 //By convention well pass 0 for A and 1 for B
