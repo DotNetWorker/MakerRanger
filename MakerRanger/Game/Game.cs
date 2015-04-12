@@ -34,6 +34,7 @@ namespace MakerRanger.Game
         public bool InProgressA { get; set; }
         public bool InProgressB { get; set; }
         public bool IsSinglePlayermode { get; set; }
+        public bool IsShowingAnimalsOnDisplay { get; set; }
 
         //Awaiting push button to scan animal
         public bool AwaitingNextPushA { get; set; }
@@ -43,6 +44,8 @@ namespace MakerRanger.Game
         public DateTime GameFinishedTimeA { get; set; }
         public DateTime GameFinishedTimeB { get; set; }
 
+        public int NumberOfRounds { get; set; }
+
         public enum PlayerType : byte
         {
             PlayerA,
@@ -50,6 +53,8 @@ namespace MakerRanger.Game
         }
 
         private const string GameLogSDFolder = @"SD\Games\";
+
+        
 
         private bool _PlayerAReady;
         public bool PlayerAReady
@@ -60,7 +65,7 @@ namespace MakerRanger.Game
                 if (this.Enabled)
                 {
                     _PlayerAReady = value;
-                    if ((value & PlayerBReady) | (this.IsSinglePlayermode))
+                    if ((value & PlayerBReady) | (value & this.IsSinglePlayermode))
                     {
                         PlayersAreReady();
                     }
@@ -69,7 +74,7 @@ namespace MakerRanger.Game
                         NativeEventHandler PlayerReady = OnPlayerReady;
                         if (PlayerReady != null)
                         {
-                            PlayerReady((uint)1, (uint)0, DateTime.Now);
+                            PlayerReady((uint)0, (uint)0, DateTime.Now);
                         }
                     }
                 }
@@ -108,6 +113,8 @@ namespace MakerRanger.Game
         public Game()
         {
             this.IsSinglePlayermode = false;
+            this.NumberOfRounds = 2;
+            this.IsShowingAnimalsOnDisplay = true;
             // class initializer
         }
 
@@ -195,10 +202,10 @@ namespace MakerRanger.Game
             RoundTimesA.Clear();
             RoundTimesB.Clear();
             GameStartedTime = DateTime.Now;
-            RoundListA.NewList(2, 15);
+            RoundListA.NewList(this.NumberOfRounds, 15);
             if (!(this.IsSinglePlayermode))
             {
-                RoundListB.NewList(2, 15);
+                RoundListB.NewList(this.NumberOfRounds, 15);
                 if (!(InProgressB)) { this.InProgressB = true; }
 
             }

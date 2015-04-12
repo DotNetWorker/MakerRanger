@@ -39,7 +39,10 @@ namespace MakerRanger
             TestComplete,
             StartingGame,
             SinglePlayerMode,
-            TwoPlayerMode
+            SinglePlayerModeReminder,
+            TwoPlayerMode,
+            NumberOfRounds,
+            ShowingAnimalsOnDisplay
         }
 
         private LCDMessage _CurrentState = new LCDMessage(LCDStates.WelcomeMessages, null);
@@ -143,6 +146,10 @@ namespace MakerRanger
             {
                 SinglePlayerMode();
             }
+            else if (this.CurrentState.LCDState == LCDStates.SinglePlayerModeReminder)
+            {
+                SinglePlayerModeReminder();
+            }
             else if (this.CurrentState.LCDState == LCDStates.TwoPlayerMode)
             {
                 TwoPlayerMode();
@@ -150,6 +157,14 @@ namespace MakerRanger
             else if (this.CurrentState.LCDState == LCDStates.PressToNextAnimal)
             {
                 PressToScan(this.CurrentState.MessageArgument);
+            }  
+            else if (this.CurrentState.LCDState == LCDStates.NumberOfRounds)
+            {
+                NumberOfRounds(this.CurrentState.MessageArgument);
+            }
+            else if (this.CurrentState.LCDState == LCDStates.ShowingAnimalsOnDisplay)
+            {
+                ShowingAnimalsOnDisplay(this.CurrentState.MessageArgument);
             }
             else
             {
@@ -178,7 +193,32 @@ namespace MakerRanger
             lcd.Write("Single Player");
             lcd.SetCursorPosition(5, 1);
             lcd.Write("Mode");
-            SnoozeDisplay(1000, true);
+            SnoozeDisplay(2500, true);
+        }
+
+        private void NumberOfRounds(String MessageArgument )
+        {
+            lcd.Visible = true;
+            lcd.Backlight = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write(MessageArgument);
+            lcd.SetCursorPosition(0, 1);
+            lcd.Write("rounds set");
+            SnoozeDisplay(1500, true);
+        }
+        
+        private void SinglePlayerModeReminder()
+        {
+            lcd.Visible = true;
+            lcd.Backlight = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(2, 0);
+            lcd.Write("Please wait");
+            lcd.SetCursorPosition(5, 1);
+            lcd.Write("Single mode");
+            FlashDisplayText(20, 800, 200);
+            DisplaySnoozeWaitForNextMessage();
         }
 
 
@@ -192,20 +232,25 @@ namespace MakerRanger
             SnoozeDisplay(2000, false);
             lcd.SetCursorPosition(0, 0);
             lcd.Write("             ");
-            lcd.SetCursorPosition(6, 0);
+            lcd.SetCursorPosition(0, 0);
             lcd.Write("three");
-            SnoozeDisplay(1200, false);
-            lcd.SetCursorPosition(6, 0);
-            lcd.Write("two  ");
-            SnoozeDisplay(1200, false);
-            lcd.SetCursorPosition(6, 0);
-            lcd.Write("one  ");
-            SnoozeDisplay(1200, false);
-            lcd.SetCursorPosition(6, 0);
-            lcd.Write("GO   ");
             SnoozeDisplay(1000, false);
+            lcd.SetCursorPosition(5, 0);
+            lcd.Write(">two");
+            SnoozeDisplay(1000, false);
+            lcd.SetCursorPosition(9, 0);
+            lcd.Write(">one");
+            SnoozeDisplay(1000, false);
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write("                ");
+            lcd.SetCursorPosition(3, 1);
+            lcd.Write(">>> GO <<<");
+            SnoozeDisplay(1000, false);
+            
+           
         }
 
+        
 
         private void TearOffSticker()
         {
@@ -322,6 +367,17 @@ namespace MakerRanger
             SnoozeDisplay(1500);
         }
 
+        private void ShowingAnimalsOnDisplay(string TextArgs)
+        {
+            lcd.Backlight = true;
+            lcd.Visible = true;
+            lcd.Clear();
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write("Display animals:");
+            lcd.SetCursorPosition(0, 1);
+            lcd.Write(TextArgs);
+            SnoozeDisplay(2500);
+        }
 
         private void FindThe(string TextArgs)
         {
@@ -329,10 +385,9 @@ namespace MakerRanger
             lcd.Visible = true;
             lcd.Clear();
             lcd.SetCursorPosition(0, 0);
-            lcd.Write("Catch a ...");
+            lcd.Write("Catch the ...");
             lcd.SetCursorPosition(0, 1);
             lcd.Write(TextArgs);
-            SnoozeDisplay(1000);
             DisplaySnoozeWaitForNextMessage();
         }
         private void HealthCheckOK()

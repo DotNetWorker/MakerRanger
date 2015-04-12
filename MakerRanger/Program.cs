@@ -208,6 +208,10 @@ namespace MakerRanger
             {
                 oLCDScreenB.AddMessage(LCDScreen.LCDStates.StartingGame);
             }
+            else
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.SinglePlayerModeReminder);
+            }
             DisplaySeekingA();
             DisplaySeekingB();
 
@@ -218,6 +222,10 @@ namespace MakerRanger
         private static void DisplaySeekingA()
         {
             string Description = oRFIDIdentityDic.GetName(GameController.RoundListA.CurentItemID());
+            if (!(GameController.IsShowingAnimalsOnDisplay))
+            {
+                Description = string.Empty;
+            }
             oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
             if (isMotorsConnected)
             {
@@ -232,6 +240,10 @@ namespace MakerRanger
             if (!(GameController.IsSinglePlayermode))
             {
                 string Description = oRFIDIdentityDic.GetName(GameController.RoundListB.CurentItemID());
+                if (!(GameController.IsShowingAnimalsOnDisplay))
+                {
+                    Description = string.Empty;
+                }
                 oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.FindThe, Description));
                 if (isMotorsConnected)
                 {
@@ -256,7 +268,7 @@ namespace MakerRanger
         {
 
 
-           
+
             //End of game by nature should show on both screens
             if (data1 == 0)
             {
@@ -362,7 +374,10 @@ namespace MakerRanger
         {
             //Tell user to take sticker
             oLCDScreenA.AddMessage(LCDScreen.LCDStates.TakeSticker);
-            oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            if (!(GameController.IsSinglePlayermode))
+            {
+                oLCDScreenB.AddMessage(LCDScreen.LCDStates.TakeSticker);
+            }
         }
 
 
@@ -405,7 +420,7 @@ namespace MakerRanger
                 }
             }
             //Feed to the admin processor
-            if (e.TagIndex > (short)99) { ExecuteAdminCommand(e.TagIndex); }
+            if (e.TagIndex > (short)99) { ExecuteAdminCommand(e.TagIndex, (short)0); }
 
             // if oRoundListA.isCurrentItem(e.)
         }
@@ -436,26 +451,42 @@ namespace MakerRanger
 
             }
             //Feed to the admin processor
-            if (e.TagIndex > (short)99) { ExecuteAdminCommand(e.TagIndex); }
+            if (e.TagIndex > (short)99) { ExecuteAdminCommand(e.TagIndex, (short)1); }
         }
 
 
         //If RFID with a definition above 100 found, then it is treated as an admin command
         //Do whatever that Id defines
-        private static void ExecuteAdminCommand(short CommandID)
+        private static void ExecuteAdminCommand(short CommandID, short reader)
         {
             switch (CommandID)
             {
-                case 100:
+                case (short)100:
                     // Reprint Labels
                     Debug.Print("Admin command " + CommandID.ToString());
+                    //reprint the stickers and show display again
+                    if (!(GameController.InProgressA) && !(GameController.InProgressB))
+                    {
+                        if (reader == (short)0)
+                        {
+                            EndOfGame((uint)0, (uint)0, DateTime.Now);
+                        }
+                        else
+                        {
+                            EndOfGame((uint)1, (uint)0, DateTime.Now);
+                        }
+                    }
                     break;
-                case 101:
+                case (short)101:
                     // Abort game
                     Debug.Print("Admin command " + CommandID.ToString());
+                    GameController.InProgressA = false;
+                    GameController.InProgressB = false;
+                    oLCDScreenA.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
+                    oLCDScreenB.AddMessage(LCDScreen.LCDStates.WelcomeMessages);
                     break;
                 // Single player toggle 
-                case 102:
+                case (short)102:
                     Debug.Print("Admin command " + CommandID.ToString());
                     Debug.Print("Single Player Toggle");
                     //If the game is not yet in progress allow switch player modes                    
@@ -465,10 +496,66 @@ namespace MakerRanger
                         if (GameController.IsSinglePlayermode)
                         {
                             oLCDScreenA.AddMessage(LCDScreen.LCDStates.SinglePlayerMode);
+                            oLCDScreenB.AddMessage(LCDScreen.LCDStates.SinglePlayerMode);
                         }
                         else
                         {
                             oLCDScreenA.AddMessage(LCDScreen.LCDStates.TwoPlayerMode);
+                            oLCDScreenB.AddMessage(LCDScreen.LCDStates.TwoPlayerMode);
+
+
+                        }
+                    }
+
+                    break;
+                case (short)103:
+                    // Set Number of Rounds
+                    // Rotate around a set number of rounds
+                    if (!(GameController.InProgressA) && !(GameController.InProgressB))
+                    {
+                        switch (GameController.NumberOfRounds)
+                        {
+                            case 2:
+                                GameController.NumberOfRounds = 5;
+                                break;
+                            case 5:
+                                GameController.NumberOfRounds = 8;
+                                break;
+                            case 8:
+                                GameController.NumberOfRounds = 10;
+                                break;
+                            case 10:
+                                GameController.NumberOfRounds = 15;
+                                break;
+                            case 15:
+                                GameController.NumberOfRounds = 2;
+                                break;
+                        }
+                        //GameController.NumberOfRounds
+                        oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.NumberOfRounds, GameController.NumberOfRounds.ToString()));
+                        oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.NumberOfRounds, GameController.NumberOfRounds.ToString()));
+                    }
+                    break;
+                // Show Animals toggle 
+                case (short)104:
+                    Debug.Print("Admin command " + CommandID.ToString());
+                    Debug.Print("Show Animal Toggle");
+                    //If the game is not yet in progress allow switch player modes                    
+                    if (!(GameController.InProgressA) && !(GameController.InProgressB))
+                    {
+                        GameController.IsShowingAnimalsOnDisplay = !GameController.IsShowingAnimalsOnDisplay;
+                        if (GameController.IsShowingAnimalsOnDisplay)
+                        {
+                            oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.ShowingAnimalsOnDisplay, "true"));
+                            oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.ShowingAnimalsOnDisplay, "true"));
+
+                        }
+                        else
+                        {
+                            oLCDScreenA.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.ShowingAnimalsOnDisplay, "false"));
+                            oLCDScreenB.AddMessage(new LCD.LCDMessage(LCDScreen.LCDStates.ShowingAnimalsOnDisplay, "false"));
+
+
                         }
                     }
 
