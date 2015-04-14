@@ -55,6 +55,7 @@ namespace MakerRanger
 
         private static Steppers.StepperController oStepperMotorController;
         private static LEDCube.LEDController oLEDController;
+        private static I2CDevice I2CDeviceInstance = null;
 
         public static void Main()
         {
@@ -76,11 +77,14 @@ namespace MakerRanger
             LCDThreadB.Start();
             oLCDScreenB.AddMessage(LCDScreen.LCDStates.Startup);
 
+            
+
             //Set up the I2C for controlling the stepper motors
-            oStepperMotorController = new Steppers.StepperController(0x04);
+            oStepperMotorController = new Steppers.StepperController(0x04, ref I2CDeviceInstance);
 
             //Set up the I2C for controlling the cube lighting
-            //oLEDController = new LEDCube.LEDController(0x05);
+            oLEDController = new LEDCube.LEDController(0x05, ref I2CDeviceInstance);
+            oLEDController.ScanningAnimation(LEDCube.LEDController.PlayerType.PlayerA);
 
             //Dictionary holds all the RFID tags IDs and the human readable names from SD card
             oRFIDIdentityDic = new RFID.RFIDIdentityDictionary();
@@ -403,6 +407,7 @@ namespace MakerRanger
                 {
                     if (!(GameController.AwaitingNextPushA))
                     {
+                        oLEDController.ScanningAnimation(LEDCube.LEDController.PlayerType.PlayerA);
                         GameController.AwaitingNextPushA = true;
                         //Correct tag in place
                         //Log time and ask to scan
@@ -434,6 +439,7 @@ namespace MakerRanger
                 {
                     if (!(GameController.AwaitingNextPushB))
                     {
+                        oLEDController.ScanningAnimation(LEDCube.LEDController.PlayerType.PlayerB);
                         GameController.AwaitingNextPushB = true;
                         //Correct tag in place
                         //Log time and ask to scan

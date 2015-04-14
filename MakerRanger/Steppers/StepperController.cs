@@ -15,19 +15,29 @@ namespace MakerRanger.Steppers
 
         public byte Address { get; private set; }
 
-        public StepperController(byte address, int clockRateKhz)
+        public StepperController(byte address, int clockRateKhz, ref I2CDevice I2CDeviceInstance)
         {
             this.Address = address;
             this.i2cConfig = new I2CDevice.Configuration(this.Address, clockRateKhz);
-            this.i2cDevice = new I2CDevice(this.i2cConfig);
+            if (I2CDeviceInstance == null)
+            {
+                I2CDeviceInstance = new I2CDevice(this.i2cConfig);
+                this.i2cDevice = I2CDeviceInstance;
+            }
+            else
+            {
+                this.i2cDevice = I2CDeviceInstance;
+
+            }
         }
-        public StepperController(byte address)
-            : this(address, DefaultClockRate)
+        public StepperController(byte address, ref I2CDevice I2CDeviceInstance)
+            : this(address, DefaultClockRate, ref I2CDeviceInstance)
         {
         }
 
         private void Write(byte[] writeBuffer)
         {
+            this.i2cDevice.Config = this.i2cConfig;
             // create a write transaction containing the bytes to be written to the device
             I2CDevice.I2CTransaction[] writeTransaction = new I2CDevice.I2CTransaction[]
         {
@@ -58,6 +68,7 @@ namespace MakerRanger.Steppers
         }
         private void Read(byte[] readBuffer)
         {
+            this.i2cDevice.Config = this.i2cConfig;
             // create a read transaction
             I2CDevice.I2CTransaction[] readTransaction = new I2CDevice.I2CTransaction[]
         {
@@ -109,7 +120,7 @@ namespace MakerRanger.Steppers
             {
                 CommandToSend[0] = 1;
                 Debug.Print("Moving Stepper A to: " + Position);
-               
+
             }
             else
             {
@@ -117,7 +128,7 @@ namespace MakerRanger.Steppers
                 Debug.Print("Moving Stepper B to: " + Position);
             }
 
-            
+
             CommandToSend[1] = (byte)Position;
             this.Write(CommandToSend);
         }

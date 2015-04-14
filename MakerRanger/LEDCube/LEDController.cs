@@ -16,19 +16,29 @@ namespace MakerRanger.LEDCube
 
         public byte Address { get; private set; }
 
-        public LEDController(byte address, int clockRateKhz)
+        public LEDController(byte address, int clockRateKhz, ref I2CDevice I2CDeviceInstance)
         {
             this.Address = address;
             this.i2cConfig = new I2CDevice.Configuration(this.Address, clockRateKhz);
-            this.i2cDevice = new I2CDevice(this.i2cConfig);
+            if (I2CDeviceInstance == null)
+            {
+                I2CDeviceInstance = new I2CDevice(this.i2cConfig);
+                this.i2cDevice = I2CDeviceInstance;
+            }
+            else
+            {
+                this.i2cDevice = I2CDeviceInstance;
+
+            }
         }
-        public LEDController(byte address)
-            : this(address, DefaultClockRate)
+        public LEDController(byte address, ref I2CDevice I2CDeviceInstance)
+            : this(address, DefaultClockRate, ref I2CDeviceInstance)
         {
         }
 
         private void Write(byte[] writeBuffer)
         {
+            this.i2cDevice.Config = this.i2cConfig;
             // create a write transaction containing the bytes to be written to the device
             I2CDevice.I2CTransaction[] writeTransaction = new I2CDevice.I2CTransaction[]
         {
@@ -59,6 +69,7 @@ namespace MakerRanger.LEDCube
         }
         private void Read(byte[] readBuffer)
         {
+            this.i2cDevice.Config = this.i2cConfig;
             // create a read transaction
             I2CDevice.I2CTransaction[] readTransaction = new I2CDevice.I2CTransaction[]
         {
@@ -100,7 +111,24 @@ namespace MakerRanger.LEDCube
             PlayerB
         }
 
-      
+        public void ScanningAnimation(PlayerType Player)
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            if (Player == PlayerType.PlayerA)
+            {
+                CommandToSend[0] = 1;
+                Debug.Print("LED CUBE SCANNING: " );
+
+            }
+            else
+            {
+                CommandToSend[0] = 2;
+                Debug.Print("LED CUBE SCANNING: ");
+            }
+                                 
+            this.Write(CommandToSend);
+        }
 
 
 
