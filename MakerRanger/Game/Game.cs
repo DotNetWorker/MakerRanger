@@ -8,6 +8,9 @@ namespace MakerRanger.Game
 {
     class Game
     {
+        // if playing with users from social media we get the user info from here
+        public Person.Person PersonA;
+        public Person.Person PersonB;
 
         //Round list keeps the list of items and the order we are seeking them
         public RoundList RoundListA = new RoundList();
@@ -20,6 +23,7 @@ namespace MakerRanger.Game
         //Events
         public event NativeEventHandler OnPlayersAreReady;
         public event NativeEventHandler OnPlayerReady;
+        public event NativeEventHandler OnPlayerAdded;
 
         public event NativeEventHandler OnNextAnimalPush;
 
@@ -54,7 +58,7 @@ namespace MakerRanger.Game
 
         private const string GameLogSDFolder = @"SD\Games\";
 
-        
+
 
         private bool _PlayerAReady;
         public bool PlayerAReady
@@ -201,6 +205,34 @@ namespace MakerRanger.Game
             //Clear previous rounds and create new lists to catch
             RoundTimesA.Clear();
             RoundTimesB.Clear();
+
+            // if players loaded and played, remove them else set the current players 
+            // to have played
+            if (!(this.PersonA==null)&&(this.PersonA.HasPlayed))
+            {
+                this.PersonA = null;
+            }
+            else
+            {
+                if (!(this.PersonA == null))
+                {
+this.PersonA.HasPlayed = true;
+                }
+                
+            }
+
+            if (!(this.PersonB==null)&&(this.PersonB.HasPlayed))
+            {
+                this.PersonB = null;
+            }
+            else
+            {
+                if (!(this.PersonB==null))
+                {
+                this.PersonB.HasPlayed = true;
+                }
+            }
+
             GameStartedTime = DateTime.Now;
             RoundListA.NewList(this.NumberOfRounds, 15);
             if (!(this.IsSinglePlayermode))
@@ -319,14 +351,14 @@ namespace MakerRanger.Game
             }
         }
 
-        private void SaveRoundToFile(RoundList ThisRoundList,Queue RoundTimes )
+        private void SaveRoundToFile(RoundList ThisRoundList, Queue RoundTimes)
         {
             if (!(Directory.Exists(GameLogSDFolder)))
             {
                 Directory.CreateDirectory(GameLogSDFolder);
             }
 
-            DateTime StartTime = (DateTime) RoundTimes.Dequeue();
+            DateTime StartTime = (DateTime)RoundTimes.Dequeue();
             //Write the log of each player round to file
             using (var filestream = new FileStream(GameLogSDFolder + ThisRoundList.ID.ToString(), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write, 8))
             {
@@ -336,7 +368,7 @@ namespace MakerRanger.Game
                     {
                         //Get time since started as seconds
                         TimeSpan ElapsedTime = (StartTime - (DateTime)RoundTimes.Dequeue());
-                        streamWriter.WriteLine(ThisRoundList[i].ToString() + "\t" +  ((ElapsedTime.Minutes*60)+ElapsedTime.Seconds).ToString());
+                        streamWriter.WriteLine(ThisRoundList[i].ToString() + "\t" + ((ElapsedTime.Minutes * 60) + ElapsedTime.Seconds).ToString());
                     }
                     streamWriter.Close();
                 }
@@ -344,6 +376,39 @@ namespace MakerRanger.Game
 
         }
 
+
+        public void AddPlayer(Person.Person PlayerToAdd)
+        {
+            if (this.Enabled)
+            {
+                if (!(this.InProgressB) & !(this.InProgressA))
+                {
+                    if ((this.PersonA == null) || (this.PersonA.HasPlayed))
+                    {
+                        this.PersonA = PlayerToAdd;
+                        NativeEventHandler PlayerAdded = OnPlayerAdded;
+                        if (PlayerAdded != null)
+                        {
+                            PlayerAdded((uint)0, (uint)0, DateTime.Now);
+                        }
+
+                    }
+                    else if (((this.PersonB == null) || (this.PersonB.HasPlayed)) & (!(this.PersonA == null) && this.PersonA.UserID != PlayerToAdd.UserID))
+                    {
+                        if (!(this.IsSinglePlayermode))
+                        {
+                            this.PersonB = PlayerToAdd;
+                            NativeEventHandler PlayerAdded = OnPlayerAdded;
+                            if (PlayerAdded != null)
+                            {
+                                PlayerAdded((uint)1, (uint)0, DateTime.Now);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
 
         //Raise event to start scanning sequence
         private void OnScanAnimalA()

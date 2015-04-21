@@ -34,7 +34,7 @@ namespace MakerRanger
         //    serialPortHelper.PrintLine(@"FE");
         //    serialPortHelper.PrintLine("");
         //}
-        public void RecallFormAndPrint(int pauseTime,string FormName, short Copies)
+        public void RecallFormAndPrint(int pauseTime, string FormName, short Copies, string UserID, string Text)
         {
             System.Threading.Thread.Sleep(pauseTime);
 
@@ -73,6 +73,19 @@ namespace MakerRanger
 
                 serialPortHelper.PrintLine(@"");
             }
+            else if (FormName == @"05")
+            {
+                // Printer Maker Ranger sticker using user graphics
+                //Print Graphics if required
+                // GW top left width height
+
+                serialPortHelper.Print(@"GW90,10,25,200,");
+                PersistedStorage.SendFileToSerial(serialPortHelper, @"SD\uploaded\"+ UserID + ".bmp" );
+
+                serialPortHelper.PrintLine(@"");
+                //serialPortHelper.PrintLine("A65,300,2,2,1,1,N,\"" + Text + "\"");
+                serialPortHelper.PrintLine("A100,300,0,1,2,3,N,\"" + Text + "\"");
+            }
        
            
             //Number of labels to print
@@ -81,7 +94,7 @@ namespace MakerRanger
                 
         }
 
-        public void PrintStoredForm(int pauseTime,string StoredFormName, string GameNumber )
+        public void PrintStoredForm(int pauseTime,string StoredFormName, string Text )
         {
             serialPortHelper.PrintLine("\n");
             System.Threading.Thread.Sleep(pauseTime);
@@ -89,7 +102,7 @@ namespace MakerRanger
             serialPortHelper.PrintLine("FR\""+ StoredFormName +"\"");
             // serial number
             //A249,369,2,2,1,1,N,"#012323"
-            serialPortHelper.PrintLine("A249,369,2,2,1,1,N,\"#" + GameNumber + "\"");
+            serialPortHelper.PrintLine("A260,368,2,2,1,2,N,\"" + Text + "\"");
             //Number of labels to print
             serialPortHelper.PrintLine(@"P1,1");
             StickersPrinted(new uint(), new uint(), new DateTime());

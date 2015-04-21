@@ -118,7 +118,7 @@ namespace MakerRanger.LEDCube
             if (Player == PlayerType.PlayerA)
             {
                 CommandToSend[0] = 1;
-                Debug.Print("LED CUBE SCANNING: " );
+                Debug.Print("LED CUBE SCANNING: ");
 
             }
             else
@@ -126,11 +126,82 @@ namespace MakerRanger.LEDCube
                 CommandToSend[0] = 2;
                 Debug.Print("LED CUBE SCANNING: ");
             }
-                                 
+
             this.Write(CommandToSend);
         }
 
+        public void TurnRed(PlayerType Player)
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            if (Player == PlayerType.PlayerA)
+            {
+                CommandToSend[0] = 4;
+                Debug.Print("LED CUBE Red: ");
 
+            }
+            else
+            {
+                CommandToSend[0] = 5;
+                Debug.Print("LED CUBE Red: ");
+            }
+
+            this.Write(CommandToSend);
+        }
+
+        public void Twinkle(PlayerType Player)
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            if (Player == PlayerType.PlayerA)
+            {
+                CommandToSend[0] = 8;
+                Debug.Print("Twinkle: ");
+
+            }
+            else
+            {
+                CommandToSend[0] = 9;
+                Debug.Print("Twinkle: ");
+            }
+
+            this.Write(CommandToSend);
+        }
+        public void TurnGreen(PlayerType Player)
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            if (Player == PlayerType.PlayerA)
+            {
+                CommandToSend[0] = 6;
+                Debug.Print("LED CUBE Green: ");
+
+            }
+            else
+            {
+                CommandToSend[0] = 7;
+                Debug.Print("LED CUBE Green: ");
+            }
+
+            this.Write(CommandToSend);
+        }
+
+        public void Idle()
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            CommandToSend[0] = 0;
+            this.Write(CommandToSend);
+        }
+
+       
+        public void RandomPatterns()
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            CommandToSend[0] = 3;
+            this.Write(CommandToSend);
+        }
 
 
     }

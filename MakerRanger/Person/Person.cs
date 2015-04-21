@@ -8,6 +8,6 @@ namespace MakerRanger.Person
         public string UserName { get; set; }
         public string ScreenName { get; set; }
         public Int64 UserID { get; set; }
-        public short Guess { get; set; }
+        public bool HasPlayed { get; set; }
     }
 }

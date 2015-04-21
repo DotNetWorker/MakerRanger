@@ -26,7 +26,7 @@ namespace NeonMika.Webserver
     /// <param name="e">Access to GET or POST arguments,...</param>
     /// <param name="results">This hashtable gets converted into xml on response</param>       
     public delegate void XMLResponseMethod(Request e, Hashtable results);
-    public delegate void FileProcessed(string filename, string username, string screenname,Int64  userid,short Guess );
+    public delegate void FileProcessed(string filename, string username, string screenname,Int64  userid );
     public delegate void SetSettingsValue(string MaxGuessValue, string MaxQtyValue);
     
 
@@ -765,58 +765,61 @@ namespace NeonMika.Webserver
             {
                 try
                 {
-                    //string filePath = RawUrlDecode(e.GetArguments["path"].ToString());
-                    //filePath = filePath.Replace('/', '\\');
+                    string filePath = RawUrlDecode(e.GetArguments["path"].ToString());
+                    filePath = filePath.Replace('/', '\\');
 
-                    //// Create directory for file destination
-                    //try
-                    //{
-                    //    Directory.CreateDirectory(filePath.Substring(0, filePath.LastIndexOf("\\")));
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    Debug.Print(ex.ToString());
-                    //    ret.Add("Error", "Could not create directory");
-                    //}
+                    // Create directory for file destination
+                    try
+                    {
+                        Directory.CreateDirectory(filePath.Substring(0, filePath.LastIndexOf("\\")));
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print(ex.ToString());
+                        ret.Add("Error", "Could not create directory");
+                    }
 
                     try
                     {
-                        //// Open write stream
-                        //FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-                        //Debug.Print(Debug.GC(true).ToString());
-                        //Debug.Print(Debug.GC(true).ToString());
+                        // Open write stream
+                        FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+                        Debug.Print(Debug.GC(true).ToString());
+                        Debug.Print(Debug.GC(true).ToString());
 
-                        //// Instanziate PostFileReader
-                        //// We will use this to load the file block by block and save those blocks to another file
-                        //PostFileReader post = new PostFileReader();
-                        //Debug.Print(Debug.GC(true).ToString());
-                        //Debug.Print(Debug.GC(true).ToString());
+                        // Instanziate PostFileReader
+                        // We will use this to load the file block by block and save those blocks to another file
+                        PostFileReader post = new PostFileReader();
+                        Debug.Print(Debug.GC(true).ToString());
+                        Debug.Print(Debug.GC(true).ToString());
 
-                        //// Here the file copy happens:
-                        //// 1. Copy full blocks
-                        //long nrBlocks = post.Length/Settings.FILE_BUFFERSIZE;
-                        //for (int i = 0; i < nrBlocks; i++)
-                        //{
-                        //    fs.Write(post.Read(Settings.FILE_BUFFERSIZE), 0, Settings.FILE_BUFFERSIZE);
-                        //    fs.Flush();
-                        //    Debug.GC(true);
-                        //    Debug.GC(true);
-                        //    Debug.Print("Block " + i + " of " + nrBlocks + " written\n");
-                        //}
-                        //// 2. Copy last not-full block
-                        //fs.Write(post.Read((int)(post.Length % Settings.FILE_BUFFERSIZE)), 0, (int)(post.Length % Settings.FILE_BUFFERSIZE));
-                        //fs.Flush();
-                        //// File saved, close file writing filestream
-                        //fs.Close();
-                        //// Close reading file
-                        //post.Close();
-                        //ret.Add("Message","File upload successfull");
-                        if (e.GetArguments["guess"].ToString() == String.Empty)
+                        // Here the file copy happens:
+                        // 1. Copy full blocks
+                        long nrBlocks = post.Length / Settings.FILE_BUFFERSIZE;
+                        for (int i = 0; i < nrBlocks; i++)
                         {
-                            AfterFileRecieved(string.Empty, RawUrlDecode(e.GetArguments["username"].ToString()), RawUrlDecode(e.GetArguments["screenname"].ToString()), Convert.ToInt64(e.GetArguments["userid"].ToString()), Convert.ToSByte("0"));
+                            fs.Write(post.Read(Settings.FILE_BUFFERSIZE), 0, Settings.FILE_BUFFERSIZE);
+                            fs.Flush();
+                            Debug.GC(true);
+                            Debug.GC(true);
+                            Debug.Print("Block " + i + " of " + nrBlocks + " written\n");
                         }
-                        else
-                        { AfterFileRecieved(string.Empty, RawUrlDecode(e.GetArguments["username"].ToString()), RawUrlDecode(e.GetArguments["screenname"].ToString()), Convert.ToInt64(e.GetArguments["userid"].ToString()), Convert.ToSByte(e.GetArguments["guess"].ToString())); }
+                        // 2. Copy last not-full block
+                        fs.Write(post.Read((int)(post.Length % Settings.FILE_BUFFERSIZE)), 0, (int)(post.Length % Settings.FILE_BUFFERSIZE));
+                        fs.Flush();
+                        // File saved, close file writing filestream
+                        fs.Close();
+                        // Close reading file
+                        post.Close();
+                        ret.Add("Message", "File upload successfull");
+                       
+                        AfterFileRecieved(string.Empty, RawUrlDecode(e.GetArguments["username"].ToString()), RawUrlDecode(e.GetArguments["screenname"].ToString()), Convert.ToInt64(e.GetArguments["userid"].ToString()));
+                       
+                        //if (e.GetArguments["guess"].ToString() == String.Empty)
+                        //{
+                        //    AfterFileRecieved(string.Empty, RawUrlDecode(e.GetArguments["username"].ToString()), RawUrlDecode(e.GetArguments["screenname"].ToString()), Convert.ToInt64(e.GetArguments["userid"].ToString()));
+                        //}
+                        //else
+                        //{ AfterFileRecieved(string.Empty, RawUrlDecode(e.GetArguments["username"].ToString()), RawUrlDecode(e.GetArguments["screenname"].ToString()), Convert.ToInt64(e.GetArguments["userid"].ToString()), Convert.ToSByte(e.GetArguments["guess"].ToString())); }
                     }
                     catch (Exception ex)
                     {

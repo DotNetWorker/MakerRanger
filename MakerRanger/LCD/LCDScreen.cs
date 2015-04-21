@@ -42,7 +42,8 @@ namespace MakerRanger
             SinglePlayerModeReminder,
             TwoPlayerMode,
             NumberOfRounds,
-            ShowingAnimalsOnDisplay
+            ShowingAnimalsOnDisplay,
+            KnownPlayer
         }
 
         private LCDMessage _CurrentState = new LCDMessage(LCDStates.WelcomeMessages, null);
@@ -118,6 +119,10 @@ namespace MakerRanger
             {
                 GetReady();
             }
+            else if (this.CurrentState.LCDState == LCDStates.KnownPlayer)
+            {
+                KnownPlayer(this.CurrentState.MessageArgument);
+            }
             else if (this.CurrentState.LCDState == LCDStates.TestComplete)
             {
                 TestComplete(this.CurrentState.MessageArgument);
@@ -157,7 +162,7 @@ namespace MakerRanger
             else if (this.CurrentState.LCDState == LCDStates.PressToNextAnimal)
             {
                 PressToScan(this.CurrentState.MessageArgument);
-            }  
+            }
             else if (this.CurrentState.LCDState == LCDStates.NumberOfRounds)
             {
                 NumberOfRounds(this.CurrentState.MessageArgument);
@@ -196,7 +201,7 @@ namespace MakerRanger
             SnoozeDisplay(2500, true);
         }
 
-        private void NumberOfRounds(String MessageArgument )
+        private void NumberOfRounds(String MessageArgument)
         {
             lcd.Visible = true;
             lcd.Backlight = true;
@@ -207,7 +212,7 @@ namespace MakerRanger
             lcd.Write("rounds set");
             SnoozeDisplay(1500, true);
         }
-        
+
         private void SinglePlayerModeReminder()
         {
             lcd.Visible = true;
@@ -246,16 +251,17 @@ namespace MakerRanger
             lcd.SetCursorPosition(3, 1);
             lcd.Write(">>> GO <<<");
             SnoozeDisplay(1000, false);
-            
-           
+
+
         }
 
-        
+
 
         private void TearOffSticker()
         {
             lcd.Visible = true;
             lcd.Backlight = true;
+
             LoadUpArrowSpecialChars();
 
             lcd.Clear();
@@ -342,7 +348,8 @@ namespace MakerRanger
         }
         private void StartupMessage()
         {
-            lcd.BlinkCursor = true;
+            lcd.BlinkCursor = false;
+            lcd.ShowCursor = false;
             // Turn display on, turn back light on, hide small cursor, show big blinking cursor
             lcd.Visible = true;
             lcd.Backlight = true;
@@ -512,6 +519,20 @@ namespace MakerRanger
         }
 
 
+        private void KnownPlayer(string TextArgument)
+        {
+            lcd.Backlight = true;
+            lcd.Visible = true;
+            lcd.Clear();
+
+            lcd.SetCursorPosition(0, 0);
+            lcd.Write(TextArgument);
+            lcd.SetCursorPosition(0, 1);
+            lcd.Write("PRESS BUTTON");
+            
+            DisplaySnoozeWaitForNextMessage();
+        }
+
         private void WrongAnimal(string TextArgument)
         {
             LoadThumbsDownSpecialChars();
@@ -642,7 +663,7 @@ namespace MakerRanger
                 SnoozeDisplay(3000);
                 ScrollMessage(17, 50);
                 if (!isMessageQueueEmpty()) { break; }
-              
+
                 lcd.Clear();
                 lcd.SetCursorPosition(0, 0);
                 SnoozeDisplay(500);

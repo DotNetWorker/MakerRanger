@@ -133,6 +133,35 @@ namespace MakerRanger.Steppers
             this.Write(CommandToSend);
         }
 
+        public void RandomMotion(PlayerType Player)
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+            if (Player == PlayerType.PlayerA)
+            {
+                CommandToSend[0] = 3;
+                Debug.Print("Moving Stepper A random ");
+
+            }
+            else
+            {
+                CommandToSend[0] = 4;
+                Debug.Print("Moving Stepper B random ");
+            }
+
+            // CommandToSend[1] = (byte)Position;
+            this.Write(CommandToSend);
+        }
+
+        public void Calibrate()
+        {
+            //Format is command followed by 5 byte params
+            Byte[] CommandToSend = new byte[6];
+
+            CommandToSend[0] = 5;
+            Debug.Print("Moving Stepper A random ");
+            this.Write(CommandToSend);
+        }
 
 
     }
